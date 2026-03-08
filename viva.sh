@@ -15,7 +15,7 @@ git pull
 
 echo "📦 Installo dipendenze e buildo..."
 cd viva-push-it
-npm ci
+npm install
 npm run build
 
 echo "✅ Fatto! Build completato in viva-push-it/dist/"
