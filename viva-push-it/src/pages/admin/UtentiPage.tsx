@@ -30,6 +30,7 @@ export function UtentiPage() {
       if (useDb) {
         await updateProfileBackend(editing.id, {
           full_name: form.fullName ?? editing.fullName,
+          phone: form.phone ?? editing.phone,
           role: form.role ?? editing.role,
         });
       } else {
@@ -105,6 +106,15 @@ export function UtentiPage() {
               />
             </div>
             <div>
+              <label className="block text-sm text-slate-600 mb-1">Telefono</label>
+              <input
+                value={form.phone ?? editing?.phone ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                placeholder="+39 333 1234567"
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+            <div>
               <label className="block text-sm text-slate-600 mb-1">Ruolo *</label>
               <select
                 value={form.role ?? editing?.role ?? 'user'}
@@ -147,6 +157,7 @@ export function UtentiPage() {
             <tr>
               <th className="text-left p-4">Email</th>
               <th className="text-left p-4">Nome</th>
+              <th className="text-left p-4">Telefono</th>
               <th className="text-left p-4">Ruolo</th>
               <th className="text-left p-4">Azioni</th>
             </tr>
@@ -156,6 +167,7 @@ export function UtentiPage() {
               <tr key={u.id} className="border-t border-slate-100">
                 <td className="p-4">{u.email}</td>
                 <td className="p-4 font-medium">{u.fullName}</td>
+                <td className="p-4 text-sm">{u.phone ?? '-'}</td>
                 <td className="p-4">
                   <span className={`px-2 py-1 rounded text-xs ${u.role === 'admin' ? 'bg-primary-100 text-primary-700' : 'bg-slate-100'}`}>
                     {u.role}

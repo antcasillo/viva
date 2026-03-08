@@ -33,7 +33,7 @@ function authMiddleware(req, res, next) {
     return res.status(401).json({ error: 'Token non valido o scaduto' });
   }
 
-  const user = db.prepare('SELECT id, email, full_name, role, avatar_url, created_at FROM profiles WHERE id = ?').get(payload.userId);
+  const user = db.prepare('SELECT id, email, full_name, phone, role, avatar_url, created_at FROM profiles WHERE id = ?').get(payload.userId);
   if (!user) {
     return res.status(401).json({ error: 'Utente non trovato' });
   }
@@ -42,6 +42,7 @@ function authMiddleware(req, res, next) {
     id: user.id,
     email: user.email,
     fullName: user.full_name,
+    phone: user.phone,
     role: user.role,
     avatarUrl: user.avatar_url,
     createdAt: user.created_at,

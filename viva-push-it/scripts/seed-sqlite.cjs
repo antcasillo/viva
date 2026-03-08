@@ -22,17 +22,25 @@ const schemaPath = path.join(__dirname, '..', 'server', 'schema.sql');
 const schema = fs.readFileSync(schemaPath, 'utf8');
 db.exec(schema);
 
+// Migration: aggiungi phone a profiles se non esiste
+try {
+  const cols = db.prepare('PRAGMA table_info(profiles)').all();
+  if (!cols.some((c) => c.name === 'phone')) {
+    db.exec('ALTER TABLE profiles ADD COLUMN phone TEXT');
+  }
+} catch (_) {}
+
 function uuid() {
   return crypto.randomUUID();
 }
 
 const USERS = [
-  { email: 'admin@vivapush.it', password: 'admin123', full_name: 'Maria Rossi', role: 'admin' },
-  { email: 'genitore.bianchi@gmail.com', password: 'user123', full_name: 'Giuseppe Bianchi', role: 'user' },
-  { email: 'anna.verdi@email.it', password: 'user123', full_name: 'Anna Verdi', role: 'user' },
-  { email: 'marco.neri@outlook.com', password: 'user123', full_name: 'Marco Neri', role: 'user' },
-  { email: 'laura.gialli@gmail.com', password: 'user123', full_name: 'Laura Gialli', role: 'user' },
-  { email: 'paolo.rossi@email.it', password: 'user123', full_name: 'Paolo Rossi', role: 'user' },
+  { email: 'admin@vivapush.it', password: 'admin123', full_name: 'Maria Rossi', role: 'admin', phone: null },
+  { email: 'genitore.bianchi@gmail.com', password: 'user123', full_name: 'Giuseppe Bianchi', role: 'user', phone: '+39 333 1234567' },
+  { email: 'anna.verdi@email.it', password: 'user123', full_name: 'Anna Verdi', role: 'user', phone: '+39 340 9876543' },
+  { email: 'marco.neri@outlook.com', password: 'user123', full_name: 'Marco Neri', role: 'user', phone: '+39 328 5551234' },
+  { email: 'laura.gialli@gmail.com', password: 'user123', full_name: 'Laura Gialli', role: 'user', phone: '+39 366 7778899' },
+  { email: 'paolo.rossi@email.it', password: 'user123', full_name: 'Paolo Rossi', role: 'user', phone: '+39 347 2223344' },
 ];
 
 const userIds = {};
@@ -43,11 +51,14 @@ for (const u of USERS) {
   const existing = db.prepare('SELECT id FROM profiles WHERE email = ?').get(u.email);
   if (existing) {
     userIds[u.email] = existing.id;
+    if (u.phone) {
+      try { db.prepare('UPDATE profiles SET phone = ? WHERE id = ?').run(u.phone, existing.id); } catch (_) {}
+    }
     console.log('  ✓ Utente esistente:', u.email);
   } else {
     const id = uuid();
     const hash = bcrypt.hashSync(u.password, 10);
-    db.prepare('INSERT INTO profiles (id, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)').run(id, u.email, hash, u.full_name, u.role);
+    db.prepare('INSERT INTO profiles (id, email, password_hash, full_name, phone, role) VALUES (?, ?, ?, ?, ?, ?)').run(id, u.email, hash, u.full_name, u.phone || null, u.role);
     userIds[u.email] = id;
     console.log('  ✓ Creato:', u.email);
   }

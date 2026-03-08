@@ -16,7 +16,7 @@ router.post('/login', (req, res) => {
     return res.status(400).json({ error: 'Email e password richiesti' });
   }
 
-  const user = db.prepare('SELECT id, email, password_hash, full_name, role, avatar_url, created_at FROM profiles WHERE email = ?').get(email.toLowerCase().trim());
+  const user = db.prepare('SELECT id, email, password_hash, full_name, phone, role, avatar_url, created_at FROM profiles WHERE email = ?').get(email.toLowerCase().trim());
   if (!user) {
     return res.status(401).json({ error: 'Email o password non corretti' });
   }
@@ -31,6 +31,7 @@ router.post('/login', (req, res) => {
     id: user.id,
     email: user.email,
     fullName: user.full_name,
+    phone: user.phone,
     role: user.role,
     avatarUrl: user.avatar_url,
     createdAt: user.created_at,
@@ -59,14 +60,14 @@ router.post('/register', (req, res) => {
   const id = uuid();
   const hash = bcrypt.hashSync(password, 10);
   db.prepare(
-    'INSERT INTO profiles (id, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)'
-  ).run(id, email.toLowerCase().trim(), hash, fullName.trim(), 'user');
+    'INSERT INTO profiles (id, email, password_hash, full_name, phone, role) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(id, email.toLowerCase().trim(), hash, fullName.trim(), req.body.phone || null, 'user');
 
-  const user = db.prepare('SELECT id, email, full_name, role, created_at FROM profiles WHERE id = ?').get(id);
+  const user = db.prepare('SELECT id, email, full_name, phone, role, created_at FROM profiles WHERE id = ?').get(id);
   const token = signToken({ userId: id });
   res.status(201).json({
     success: true,
-    user: { id: user.id, email: user.email, fullName: user.full_name, role: user.role, createdAt: user.created_at },
+    user: { id: user.id, email: user.email, fullName: user.full_name, phone: user.phone, role: user.role, createdAt: user.created_at },
     token,
   });
 });

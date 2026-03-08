@@ -67,11 +67,20 @@ export async function fetchAllProfilesBackend(): Promise<User[]> {
   return api<User[]>('/api/profiles');
 }
 
-export async function updateProfileBackend(userId: string, updates: { full_name?: string; role?: string }): Promise<void> {
+export async function updateProfileBackend(userId: string, updates: { full_name?: string; phone?: string; role?: string }): Promise<void> {
   const body: Record<string, string> = {};
   if (updates.full_name != null) body.fullName = updates.full_name;
+  if (updates.phone != null) body.phone = updates.phone;
   if (updates.role != null) body.role = updates.role;
   await api(`/api/profiles/${userId}`, { method: 'PATCH', body });
+}
+
+export async function createProfileBackend(data: { email: string; password: string; fullName: string; phone?: string; role?: string }): Promise<User> {
+  const created = await api<User & { id: string }>('/api/profiles', {
+    method: 'POST',
+    body: { ...data, role: data.role || 'user' },
+  });
+  return { ...created, avatarUrl: undefined };
 }
 
 // --- Students ---

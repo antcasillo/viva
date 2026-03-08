@@ -13,8 +13,8 @@ router.use(adminOnly);
 
 // GET /api/profiles - tutti i profili
 router.get('/', (req, res) => {
-  const rows = db.prepare('SELECT id, email, full_name, role, avatar_url, created_at FROM profiles ORDER BY created_at DESC').all();
-  res.json(rows.map((r) => ({ id: r.id, email: r.email, fullName: r.full_name, role: r.role, avatarUrl: r.avatar_url, createdAt: r.created_at })));
+  const rows = db.prepare('SELECT id, email, full_name, phone, role, avatar_url, created_at FROM profiles ORDER BY created_at DESC').all();
+  res.json(rows.map((r) => ({ id: r.id, email: r.email, fullName: r.full_name, phone: r.phone, role: r.role, avatarUrl: r.avatar_url, createdAt: r.created_at })));
 });
 
 // PATCH /api/profiles/:id - aggiorna profilo
@@ -25,6 +25,7 @@ router.patch('/:id', (req, res) => {
   const updates = [];
   const params = [];
   if (req.body.fullName != null) { updates.push('full_name = ?'); params.push(req.body.fullName); }
+  if (req.body.phone != null) { updates.push('phone = ?'); params.push(req.body.phone); }
   if (req.body.role != null) { updates.push('role = ?'); params.push(req.body.role); }
   if (updates.length === 0) return res.status(400).json({ error: 'Nessun campo da aggiornare' });
 
@@ -35,7 +36,7 @@ router.patch('/:id', (req, res) => {
 
 // POST /api/profiles - crea utente (admin)
 router.post('/', (req, res) => {
-  const { email, password, fullName, role } = req.body;
+  const { email, password, fullName, phone, role } = req.body;
   if (!email || !password || !fullName) {
     return res.status(400).json({ error: 'Email, password e nome richiesti' });
   }
@@ -46,11 +47,11 @@ router.post('/', (req, res) => {
   const id = uuid();
   const hash = bcrypt.hashSync(password, 10);
   db.prepare(
-    'INSERT INTO profiles (id, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)'
-  ).run(id, email.toLowerCase().trim(), hash, fullName.trim(), role || 'user');
+    'INSERT INTO profiles (id, email, password_hash, full_name, phone, role) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(id, email.toLowerCase().trim(), hash, fullName.trim(), phone || null, role || 'user');
 
-  const user = db.prepare('SELECT id, email, full_name, role, created_at FROM profiles WHERE id = ?').get(id);
-  res.status(201).json({ id: user.id, email: user.email, fullName: user.full_name, role: user.role, createdAt: user.created_at });
+  const user = db.prepare('SELECT id, email, full_name, phone, role, created_at FROM profiles WHERE id = ?').get(id);
+  res.status(201).json({ id: user.id, email: user.email, fullName: user.full_name, phone: user.phone, role: user.role, createdAt: user.created_at });
 });
 
 module.exports = router;

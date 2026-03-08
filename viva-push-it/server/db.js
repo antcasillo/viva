@@ -22,6 +22,14 @@ const schemaPath = path.join(__dirname, 'schema.sql');
 const schema = fs.readFileSync(schemaPath, 'utf8');
 db.exec(schema);
 
+// Migration: aggiungi phone a profiles se non esiste
+try {
+  const cols = db.prepare("PRAGMA table_info(profiles)").all();
+  if (!cols.some((c) => c.name === 'phone')) {
+    db.exec('ALTER TABLE profiles ADD COLUMN phone TEXT');
+  }
+} catch (_) {}
+
 function uuid() {
   return require('crypto').randomUUID();
 }

@@ -28,6 +28,7 @@ export const mockUsers: User[] = [
     email: 'genitore.bianchi@gmail.com',
     role: 'user',
     fullName: 'Giuseppe Bianchi',
+    phone: '+39 333 1234567',
     createdAt: '2024-02-01T09:00:00Z',
   },
   {
@@ -35,6 +36,7 @@ export const mockUsers: User[] = [
     email: 'anna.verdi@email.it',
     role: 'user',
     fullName: 'Anna Verdi',
+    phone: '+39 340 9876543',
     createdAt: '2024-02-10T11:00:00Z',
   },
   {
@@ -42,6 +44,7 @@ export const mockUsers: User[] = [
     email: 'marco.neri@outlook.com',
     role: 'user',
     fullName: 'Marco Neri',
+    phone: '+39 328 5551234',
     createdAt: '2024-02-15T14:00:00Z',
   },
   {
@@ -49,6 +52,7 @@ export const mockUsers: User[] = [
     email: 'laura.gialli@gmail.com',
     role: 'user',
     fullName: 'Laura Gialli',
+    phone: '+39 366 7778899',
     createdAt: '2024-03-01T08:00:00Z',
   },
   {
@@ -56,6 +60,7 @@ export const mockUsers: User[] = [
     email: 'paolo.rossi@email.it',
     role: 'user',
     fullName: 'Paolo Rossi',
+    phone: '+39 347 2223344',
     createdAt: '2024-03-05T16:00:00Z',
   },
 ];

@@ -10,6 +10,7 @@ export interface User {
   email: string;
   role: UserRole;
   fullName: string;
+  phone?: string;
   avatarUrl?: string;
   createdAt: string;
 }

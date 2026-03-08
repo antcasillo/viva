@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   full_name TEXT NOT NULL,
+  phone TEXT,
   role TEXT NOT NULL CHECK (role IN ('admin', 'user')),
   avatar_url TEXT,
   created_at TEXT DEFAULT (datetime('now')),

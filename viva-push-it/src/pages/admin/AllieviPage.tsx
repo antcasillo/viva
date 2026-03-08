@@ -2,15 +2,29 @@ import { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatDate, parseDateToISO } from '../../utils/dateFormat';
 import { isBackendConfigured } from '../../lib/apiClient';
-import { fetchAllProfilesBackend } from '../../services/apiBackend';
+import { fetchAllProfilesBackend, createProfileBackend } from '../../services/apiBackend';
+import { getUsers, addUser } from '../../store/usersStore';
 import type { Student, User } from '../../types/database';
+
+const NEW_PARENT_VALUE = '__new__';
 
 export function AllieviPage() {
   const { students, enrollments, addStudent, updateStudent, setStudentActive } = useData();
   const [profiles, setProfiles] = useState<User[]>([]);
+  const [showNewParentForm, setShowNewParentForm] = useState(false);
+  const [newParentForm, setNewParentForm] = useState({ fullName: '', email: '', phone: '', password: 'user123' });
+
+  const useBackend = isBackendConfigured();
+  const parentProfiles = useBackend ? profiles.filter((p) => p.role === 'user') : getUsers().filter((u) => u.role === 'user');
+
   useEffect(() => {
-    if (isBackendConfigured()) fetchAllProfilesBackend().then(setProfiles);
-  }, []);
+    if (useBackend) fetchAllProfilesBackend().then(setProfiles);
+  }, [useBackend]);
+
+  const refreshProfiles = () => {
+    if (useBackend) fetchAllProfilesBackend().then(setProfiles);
+  };
+
   const [editing, setEditing] = useState<Student | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<Partial<Student>>({});
@@ -40,6 +54,39 @@ export function AllieviPage() {
       });
       setCreating(false);
       setForm({});
+      setShowNewParentForm(false);
+    }
+  };
+
+  const handleCreateParent = async () => {
+    if (!newParentForm.fullName.trim() || !newParentForm.email.trim()) return;
+    try {
+      let newUser: User;
+      if (useBackend) {
+        newUser = await createProfileBackend({
+          fullName: newParentForm.fullName.trim(),
+          email: newParentForm.email.trim(),
+          phone: newParentForm.phone.trim() || undefined,
+          password: newParentForm.password || 'user123',
+        });
+        refreshProfiles();
+      } else {
+        newUser = addUser(
+          { email: newParentForm.email.trim(), fullName: newParentForm.fullName.trim(), phone: newParentForm.phone.trim() || undefined, role: 'user' },
+          newParentForm.password || 'user123'
+        );
+      }
+      setForm((f) => ({
+        ...f,
+        userId: newUser.id,
+        parentName: newUser.fullName,
+        parentEmail: newUser.email,
+        parentPhone: newUser.phone ?? newParentForm.phone,
+      }));
+      setShowNewParentForm(false);
+      setNewParentForm({ fullName: '', email: '', phone: '', password: 'user123' });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Errore creazione genitore');
     }
   };
 
@@ -52,12 +99,29 @@ export function AllieviPage() {
     }
   };
 
+  const handleParentSelect = (value: string) => {
+    if (value === NEW_PARENT_VALUE) {
+      setShowNewParentForm(true);
+      setForm((f) => ({ ...f, userId: '' }));
+    } else {
+      setShowNewParentForm(false);
+      const p = parentProfiles.find((x) => x.id === value);
+      setForm((f) => ({
+        ...f,
+        userId: value,
+        parentName: p?.fullName ?? f.parentName,
+        parentEmail: p?.email ?? f.parentEmail,
+        parentPhone: p?.phone ?? f.parentPhone,
+      }));
+    }
+  };
+
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Gestione Allievi</h1>
         <button
-          onClick={() => { setCreating(true); setEditing(null); setForm({}); }}
+          onClick={() => { setCreating(true); setEditing(null); setForm({}); setShowNewParentForm(false); }}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
         >
           + Nuovo allievo
@@ -102,26 +166,61 @@ export function AllieviPage() {
               />
             </div>
             {creating && (
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm text-slate-600 mb-1">Genitore *</label>
-                {isBackendConfigured() && profiles.length > 0 ? (
-                  <select
-                    value={form.userId ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  >
-                    <option value="">Seleziona genitore</option>
-                    {profiles.filter((p) => p.role === 'user').map((p) => (
-                      <option key={p.id} value={p.id}>{p.fullName} ({p.email})</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    value={form.userId ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
-                    placeholder="user-1, user-2, ... (mock)"
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
+                <select
+                  value={showNewParentForm ? NEW_PARENT_VALUE : (form.userId ?? '')}
+                  onChange={(e) => handleParentSelect(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="">Seleziona genitore esistente</option>
+                  {parentProfiles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.fullName} ({p.email})
+                    </option>
+                  ))}
+                  <option value={NEW_PARENT_VALUE}>➕ Aggiungi nuovo genitore</option>
+                </select>
+
+                {showNewParentForm && (
+                  <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
+                    <p className="text-sm font-medium text-slate-700">Nuovo genitore</p>
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <input
+                        value={newParentForm.fullName}
+                        onChange={(e) => setNewParentForm((f) => ({ ...f, fullName: e.target.value }))}
+                        placeholder="Nome e cognome *"
+                        className="px-3 py-2 border rounded-lg"
+                      />
+                      <input
+                        type="email"
+                        value={newParentForm.email}
+                        onChange={(e) => setNewParentForm((f) => ({ ...f, email: e.target.value }))}
+                        placeholder="Email *"
+                        className="px-3 py-2 border rounded-lg"
+                      />
+                      <input
+                        value={newParentForm.phone}
+                        onChange={(e) => setNewParentForm((f) => ({ ...f, phone: e.target.value }))}
+                        placeholder="Telefono"
+                        className="px-3 py-2 border rounded-lg"
+                      />
+                      <input
+                        type="password"
+                        value={newParentForm.password}
+                        onChange={(e) => setNewParentForm((f) => ({ ...f, password: e.target.value }))}
+                        placeholder="Password (default: user123)"
+                        className="px-3 py-2 border rounded-lg"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCreateParent}
+                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+                    >
+                      Crea e usa come genitore
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -131,6 +230,7 @@ export function AllieviPage() {
                 value={form.parentName ?? editing?.parentName ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, parentName: e.target.value }))}
                 className="w-full px-3 py-2 border rounded-lg"
+                disabled={!!editing}
               />
             </div>
             <div>
@@ -148,6 +248,7 @@ export function AllieviPage() {
                 value={form.parentEmail ?? editing?.parentEmail ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, parentEmail: e.target.value }))}
                 className="w-full px-3 py-2 border rounded-lg"
+                disabled={!!editing}
               />
             </div>
             <div className="md:col-span-2">
@@ -164,7 +265,7 @@ export function AllieviPage() {
             <button onClick={handleSave} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
               Salva
             </button>
-            <button onClick={() => { setEditing(null); setCreating(false); }} className="px-4 py-2 border rounded-lg">
+            <button onClick={() => { setEditing(null); setCreating(false); setShowNewParentForm(false); }} className="px-4 py-2 border rounded-lg">
               Annulla
             </button>
           </div>
