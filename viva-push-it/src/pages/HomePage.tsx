@@ -9,23 +9,28 @@ export function HomePage() {
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary-700">viva.push.it</h1>
-          <nav className="flex gap-4">
+          <nav className="flex items-center gap-3">
             {isAuthenticated ? (
-              <>
-                <span className="text-slate-600 py-2">{user?.fullName}</span>
+              <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm">
+                    {user?.fullName?.split(' ').map((n) => n[0]).join('').slice(0, 2) ?? '?'}
+                  </div>
+                  <span className="text-slate-700 font-medium hidden sm:inline">{user?.fullName}</span>
+                </div>
                 <Link
                   to={user?.role === 'admin' ? '/admin' : '/area-utente'}
-                  className="text-primary-600 hover:text-primary-700 font-medium"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors text-sm"
                 >
                   Area riservata
                 </Link>
                 <button
                   onClick={logout}
-                  className="text-slate-600 hover:text-slate-800"
+                  className="px-3 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-sm"
                 >
                   Esci
                 </button>
-              </>
+              </div>
             ) : (
               <Link
                 to="/login"
