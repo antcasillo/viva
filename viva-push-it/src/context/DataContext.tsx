@@ -25,12 +25,18 @@ type DataContextType = {
   addStudent: (s: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateStudent: (id: string, s: Partial<Student>) => Promise<void>;
   setStudentActive: (id: string, active: boolean) => Promise<void>;
+  addCourse: (c: Omit<Course, 'id' | 'createdAt'>) => Promise<void>;
+  updateCourse: (id: string, c: Partial<Course>) => Promise<void>;
+  deleteCourse: (id: string) => Promise<void>;
   addEnrollment: (e: Omit<CourseEnrollment, 'id'>) => Promise<void>;
   removeEnrollment: (courseId: string, studentId: string) => Promise<void>;
   setAttendance: (courseId: string, studentId: string, sessionDate: string, status: Attendance['status'], reason?: string) => Promise<void>;
   addEvent: (e: Omit<Event, 'id' | 'createdAt' | 'createdBy'>) => Promise<void>;
   updateEvent: (id: string, e: Partial<Event>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
+  addPayment: (p: Omit<Payment, 'id' | 'createdAt'>) => Promise<void>;
+  updatePayment: (id: string, p: Partial<Payment>) => Promise<void>;
+  deletePayment: (id: string) => Promise<void>;
   updatePaymentStatus: (id: string, status: Payment['status'], reference?: string) => Promise<void>;
 };
 
@@ -109,6 +115,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await updateStudent(id, { isActive: active });
   }, [updateStudent]);
 
+  const addCourse = useCallback(async (c: Omit<Course, 'id' | 'createdAt'>) => {
+    if (useDb) {
+      const created = await apiBackend.addCourseBackend(c);
+      setCourses((prev) => [...prev, created]);
+    } else {
+      setCourses((prev) => [...prev, { ...c, id: generateId(), createdAt: new Date().toISOString() } as Course]);
+    }
+  }, [useDb]);
+
+  const updateCourse = useCallback(async (id: string, updates: Partial<Course>) => {
+    if (useDb) await apiBackend.updateCourseBackend(id, updates);
+    setCourses((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
+  }, [useDb]);
+
+  const deleteCourse = useCallback(async (id: string) => {
+    if (useDb) await apiBackend.deleteCourseBackend(id);
+    setCourses((prev) => prev.filter((c) => c.id !== id));
+  }, [useDb]);
+
   const addEnrollment = useCallback(async (e: Omit<CourseEnrollment, 'id'>) => {
     if (enrollments.some((x) => x.courseId === e.courseId && x.studentId === e.studentId)) return;
     if (useDb) {
@@ -174,6 +199,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setEvents((prev) => prev.filter((e) => e.id !== id));
   }, [useDb]);
 
+  const addPayment = useCallback(async (p: Omit<Payment, 'id' | 'createdAt'>) => {
+    if (useDb) {
+      const created = await apiBackend.addPaymentBackend(p);
+      setPayments((prev) => [...prev, created]);
+    } else {
+      setPayments((prev) => [...prev, { ...p, id: generateId(), createdAt: new Date().toISOString() } as Payment]);
+    }
+  }, [useDb]);
+
+  const updatePayment = useCallback(async (id: string, updates: Partial<Payment>) => {
+    if (useDb) await apiBackend.updatePaymentBackend(id, updates);
+    setPayments((prev) =>
+      prev.map((p) => {
+        if (p.id !== id) return p;
+        const merged = { ...p, ...updates };
+        if (updates.status === 'paid') merged.paidAt = new Date().toISOString();
+        else if (updates.status != null) merged.paidAt = undefined;
+        return merged;
+      })
+    );
+  }, [useDb]);
+
+  const deletePayment = useCallback(async (id: string) => {
+    if (useDb) await apiBackend.deletePaymentBackend(id);
+    setPayments((prev) => prev.filter((p) => p.id !== id));
+  }, [useDb]);
+
   const updatePaymentStatus = useCallback(async (id: string, status: Payment['status'], reference?: string) => {
     if (useDb) await apiBackend.updatePaymentStatusBackend(id, status, reference);
     setPayments((prev) =>
@@ -200,12 +252,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
         addStudent,
         updateStudent,
         setStudentActive,
+        addCourse,
+        updateCourse,
+        deleteCourse,
         addEnrollment,
         removeEnrollment,
         setAttendance,
         addEvent,
         updateEvent,
         deleteEvent,
+        addPayment,
+        updatePayment,
+        deletePayment,
         updatePaymentStatus,
       }}
     >

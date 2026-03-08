@@ -3,7 +3,7 @@
  */
 
 const express = require('express');
-const { db } = require('../db');
+const { db, uuid } = require('../db');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 
 const router = express.Router();
@@ -39,26 +39,57 @@ router.get('/', (req, res) => {
   res.json(rows.map(toPayment));
 });
 
-// PATCH /api/payments/:id - aggiorna status (admin)
+// POST /api/payments (solo admin)
+router.post('/', adminOnly, (req, res) => {
+  const { studentId, amount, description, dueDate, status } = req.body;
+  if (!studentId || amount == null || !description || !dueDate)
+    return res.status(400).json({ error: 'studentId, amount, description, dueDate richiesti' });
+
+  const id = uuid();
+  db.prepare(
+    `INSERT INTO payments (id, student_id, amount, description, due_date, status)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(id, studentId, amount, description, dueDate, status || 'pending');
+
+  const row = db.prepare('SELECT * FROM payments WHERE id = ?').get(id);
+  res.status(201).json(toPayment(row));
+});
+
+// PATCH /api/payments/:id (admin)
 router.patch('/:id', adminOnly, (req, res) => {
   const { id } = req.params;
-  const { status, paymentReference } = req.body;
-  if (!status) return res.status(400).json({ error: 'status richiesto' });
+  const { studentId, amount, description, dueDate, status, paymentReference } = req.body;
 
-  const updates = ['status = ?'];
-  const params = [status];
-  if (status === 'paid') {
-    updates.push('paid_at = ?');
-    params.push(new Date().toISOString());
-    if (paymentReference) {
-      updates.push('payment_reference = ?');
-      params.push(paymentReference);
+  const updates = [];
+  const params = [];
+  if (studentId != null) { updates.push('student_id = ?'); params.push(studentId); }
+  if (amount != null) { updates.push('amount = ?'); params.push(amount); }
+  if (description != null) { updates.push('description = ?'); params.push(description); }
+  if (dueDate != null) { updates.push('due_date = ?'); params.push(dueDate); }
+  if (status != null) {
+    updates.push('status = ?');
+    params.push(status);
+    if (status === 'paid') {
+      updates.push('paid_at = ?');
+      params.push(new Date().toISOString());
     }
   }
+  if (paymentReference != null) { updates.push('payment_reference = ?'); params.push(paymentReference); }
+  if (updates.length === 0) return res.status(400).json({ error: 'Nessun campo da aggiornare' });
+
   params.push(id);
   db.prepare(`UPDATE payments SET ${updates.join(', ')} WHERE id = ?`).run(...params);
   const row = db.prepare('SELECT * FROM payments WHERE id = ?').get(id);
+  if (!row) return res.status(404).json({ error: 'Pagamento non trovato' });
   res.json(toPayment(row));
+});
+
+// DELETE /api/payments/:id (solo admin)
+router.delete('/:id', adminOnly, (req, res) => {
+  const { id } = req.params;
+  const r = db.prepare('DELETE FROM payments WHERE id = ?').run(id);
+  if (r.changes === 0) return res.status(404).json({ error: 'Pagamento non trovato' });
+  res.json({ ok: true });
 });
 
 module.exports = router;

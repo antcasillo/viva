@@ -113,6 +113,39 @@ export async function fetchCoursesBackend(): Promise<Course[]> {
   return api<Course[]>('/api/courses');
 }
 
+export async function addCourseBackend(c: Omit<Course, 'id' | 'createdAt'>): Promise<Course> {
+  const body = {
+    name: c.name,
+    description: c.description,
+    teacherName: c.teacherName,
+    dayOfWeek: c.dayOfWeek,
+    startTime: c.startTime,
+    endTime: c.endTime,
+    maxStudents: c.maxStudents ?? 10,
+    room: c.room,
+    isActive: c.isActive ?? true,
+  };
+  return api<Course>('/api/courses', { method: 'POST', body });
+}
+
+export async function updateCourseBackend(id: string, updates: Partial<Course>): Promise<void> {
+  const body: Record<string, unknown> = {};
+  if (updates.name != null) body.name = updates.name;
+  if (updates.description != null) body.description = updates.description;
+  if (updates.teacherName != null) body.teacherName = updates.teacherName;
+  if (updates.dayOfWeek != null) body.dayOfWeek = updates.dayOfWeek;
+  if (updates.startTime != null) body.startTime = updates.startTime;
+  if (updates.endTime != null) body.endTime = updates.endTime;
+  if (updates.maxStudents != null) body.maxStudents = updates.maxStudents;
+  if (updates.room != null) body.room = updates.room;
+  if (updates.isActive != null) body.isActive = updates.isActive;
+  await api(`/api/courses/${id}`, { method: 'PATCH', body });
+}
+
+export async function deleteCourseBackend(id: string): Promise<void> {
+  await api(`/api/courses/${id}`, { method: 'DELETE' });
+}
+
 // --- Enrollments ---
 export async function fetchEnrollmentsBackend(): Promise<CourseEnrollment[]> {
   return api<CourseEnrollment[]>('/api/enrollments');
@@ -151,8 +184,34 @@ export async function fetchPaymentsBackend(): Promise<Payment[]> {
   return api<Payment[]>('/api/payments');
 }
 
+export async function addPaymentBackend(p: Omit<Payment, 'id' | 'createdAt'>): Promise<Payment> {
+  const body = {
+    studentId: p.studentId,
+    amount: p.amount,
+    description: p.description,
+    dueDate: p.dueDate,
+    status: p.status ?? 'pending',
+  };
+  return api<Payment>('/api/payments', { method: 'POST', body });
+}
+
+export async function updatePaymentBackend(id: string, updates: Partial<Payment>): Promise<void> {
+  const body: Record<string, unknown> = {};
+  if (updates.studentId != null) body.studentId = updates.studentId;
+  if (updates.amount != null) body.amount = updates.amount;
+  if (updates.description != null) body.description = updates.description;
+  if (updates.dueDate != null) body.dueDate = updates.dueDate;
+  if (updates.status != null) body.status = updates.status;
+  if (updates.paymentReference != null) body.paymentReference = updates.paymentReference;
+  await api(`/api/payments/${id}`, { method: 'PATCH', body });
+}
+
 export async function updatePaymentStatusBackend(id: string, status: Payment['status'], reference?: string): Promise<void> {
   await api(`/api/payments/${id}`, { method: 'PATCH', body: { status, paymentReference: reference } });
+}
+
+export async function deletePaymentBackend(id: string): Promise<void> {
+  await api(`/api/payments/${id}`, { method: 'DELETE' });
 }
 
 // --- Events ---

@@ -6,6 +6,7 @@ import { useData } from '../context/DataContext';
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: '📊' },
   { path: '/admin/allievi', label: 'Allievi', icon: '👥' },
+  { path: '/admin/corsi', label: 'Corsi', icon: '🎵' },
   { path: '/admin/presenze', label: 'Registro Presenze', icon: '✅' },
   { path: '/admin/contabile', label: 'Situazione Contabile', icon: '💰' },
   { path: '/admin/calendario', label: 'Calendario Corsi', icon: '📅' },

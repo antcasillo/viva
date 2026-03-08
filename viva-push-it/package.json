@@ -15,6 +15,7 @@
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",
     "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
     "@fullcalendar/list": "^6.1.20",
     "@fullcalendar/react": "^6.1.20",
     "@fullcalendar/timegrid": "^6.1.20",
@@ -23,9 +24,9 @@
     "autoprefixer": "^10.4.27",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.6.0",
+    "concurrently": "^9.1.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "concurrently": "^9.1.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "js-cookie": "^3.0.5",

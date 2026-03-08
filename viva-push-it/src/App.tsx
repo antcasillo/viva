@@ -8,6 +8,7 @@ import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AllieviPage } from './pages/admin/AllieviPage';
+import { CorsiPage } from './pages/admin/CorsiPage';
 import { PresenzePage } from './pages/admin/PresenzePage';
 import { ContabilePage } from './pages/admin/ContabilePage';
 import { CalendarioPage } from './pages/admin/CalendarioPage';
@@ -39,6 +40,7 @@ function App() {
           >
             <Route index element={<AdminDashboard />} />
             <Route path="allievi" element={<AllieviPage />} />
+            <Route path="corsi" element={<CorsiPage />} />
             <Route path="presenze" element={<PresenzePage />} />
             <Route path="contabile" element={<ContabilePage />} />
             <Route path="calendario" element={<CalendarioPage />} />
