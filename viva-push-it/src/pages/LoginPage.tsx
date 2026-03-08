@@ -92,7 +92,9 @@ export function LoginPage() {
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500">
-            Demo: admin@vivapush.it / admin123 — genitore.bianchi@gmail.com / user123
+            {import.meta.env.VITE_API_URL || import.meta.env.DEV
+              ? 'Dopo il seed: admin@vivapush.it / admin123'
+              : 'Demo mock: admin@vivapush.it / admin123 — genitore.bianchi@gmail.com / user123'}
           </p>
         </div>
       </div>

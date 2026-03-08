@@ -7,7 +7,7 @@ Applicazione web per la gestione di una scuola di musica: direzione, insegnanti,
 - **Frontend:** React 19 + TypeScript + Vite
 - **Routing:** react-router-dom (rotte protette, ruoli Admin/User)
 - **Styling:** Tailwind CSS
-- **Backend:** Supabase (auth + PostgreSQL) — configurabile, attualmente mock data
+- **Backend:** Express + SQLite (self-hosted) — con fallback a mock data se server non avviato
 
 ## Struttura del Progetto
 
@@ -15,18 +15,20 @@ Applicazione web per la gestione di una scuola di musica: direzione, insegnanti,
 viva-push-it/
 ├── src/
 │   ├── components/       # Componenti riutilizzabili
-│   ├── context/          # AuthContext
-│   ├── data/             # mockData.ts (dati fittizi)
+│   ├── context/          # AuthContext, DataContext
+│   ├── data/             # mockData.ts (fallback)
 │   ├── layouts/          # AdminLayout, UserLayout
-│   ├── lib/              # supabase client
+│   ├── lib/              # supabase client, dbMappers
+│   ├── services/         # api.ts (CRUD Supabase)
 │   ├── pages/            # Pagine per area
-│   │   ├── admin/        # Dashboard, Allievi, Presenze, Contabile, Calendario, Bacheca
-│   │   └── user/         # Profilo, Assenze, Pagamenti, Eventi
+│   │   ├── admin/        # Dashboard, Allievi, Presenze, Contabile, Calendario, Bacheca, Utenti
+│   │   └── user/         # Profilo, Prossime Lezioni, Pagamenti, Eventi
 │   └── types/            # database.ts (schema TypeScript)
 ├── supabase/
-│   └── migrations/      # Schema SQL per Supabase
+│   └── migrations/      # 001_initial_schema.sql, 002_rls_and_trigger.sql
 ├── scripts/
-│   └── seed-mock-data.ts
+│   ├── seed-mock-data.ts # Dump mock (legacy)
+│   └── seed-supabase.ts  # Popola Supabase con dati demo
 └── .env.example
 ```
 
@@ -75,8 +77,13 @@ Vedi `src/types/database.ts` e `supabase/migrations/001_initial_schema.sql`.
 2. **Modulo 3:** Calendario con react-big-calendar / FullCalendar
 3. **Modulo 4:** Form assenze genitori, Integrazione SumUp per pagamenti online
 
-## Supabase (Backend Reale)
+## Backend SQLite (Database Reale)
 
-1. Crea un progetto su [supabase.com](https://supabase.com)
-2. Copia `.env.example` in `.env` e inserisci `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`
-3. Esegui le migration in `supabase/migrations/`
+**Guida dettagliata:** vedi [SETUP.md](./SETUP.md) per istruzioni passo-passo con comandi, output attesi e risoluzione problemi.
+
+**Sintesi rapida:**
+1. `npm install`
+2. `npm run db:seed`
+3. `npm run server` (terminale 1)
+4. `npm run dev` (terminale 2)
+5. Apri http://localhost:5173 e accedi con admin@vivapush.it / admin123

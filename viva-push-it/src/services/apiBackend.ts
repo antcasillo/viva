@@ -1,0 +1,171 @@
+/**
+ * API verso backend SQLite (Express)
+ * Usato quando VITE_API_URL è configurato
+ */
+
+import { apiClient } from '../lib/apiClient';
+import type {
+  User,
+  Student,
+  Course,
+  CourseEnrollment,
+  Attendance,
+  Payment,
+  Event,
+} from '../types/database';
+
+const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://localhost:3001' : '');
+
+async function api<T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> {
+  const token = apiClient.getToken();
+  const res = await fetch(`${API_URL}${path}`, {
+    method: options?.method || 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: options?.body ? JSON.stringify(options.body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Errore ${res.status}`);
+  return data as T;
+}
+
+// --- Auth ---
+export async function loginBackend(email: string, password: string, rememberMe: boolean): Promise<{ success: boolean; user?: User; error?: string }> {
+  try {
+    const data = await api<{ success: boolean; user: User; token: string; error?: string }>('/api/auth/login', {
+      method: 'POST',
+      body: { email, password },
+    });
+    if (!data.success) return { success: false, error: data.error || 'Login fallito' };
+    apiClient.setToken(data.token, rememberMe);
+    const user: User = {
+      id: data.user.id,
+      email: data.user.email,
+      role: data.user.role,
+      fullName: data.user.fullName,
+      avatarUrl: data.user.avatarUrl,
+      createdAt: data.user.createdAt,
+    };
+    return { success: true, user };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Errore di connessione' };
+  }
+}
+
+export async function fetchProfileBackend(): Promise<User | null> {
+  try {
+    const data = await api<{ user: User }>('/api/auth/me');
+    return data?.user ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchAllProfilesBackend(): Promise<User[]> {
+  return api<User[]>('/api/profiles');
+}
+
+export async function updateProfileBackend(userId: string, updates: { full_name?: string; role?: string }): Promise<void> {
+  const body: Record<string, string> = {};
+  if (updates.full_name != null) body.fullName = updates.full_name;
+  if (updates.role != null) body.role = updates.role;
+  await api(`/api/profiles/${userId}`, { method: 'PATCH', body });
+}
+
+// --- Students ---
+export async function fetchStudentsBackend(): Promise<Student[]> {
+  return api<Student[]>('/api/students');
+}
+
+export async function addStudentBackend(s: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>): Promise<Student> {
+  const body = {
+    userId: s.userId,
+    firstName: s.firstName,
+    lastName: s.lastName,
+    dateOfBirth: s.dateOfBirth,
+    parentName: s.parentName,
+    parentPhone: s.parentPhone,
+    parentEmail: s.parentEmail,
+    notes: s.notes,
+    photoUrl: s.photoUrl,
+    isActive: s.isActive,
+  };
+  return api<Student>('/api/students', { method: 'POST', body });
+}
+
+export async function updateStudentBackend(id: string, updates: Partial<Student>): Promise<void> {
+  await api(`/api/students/${id}`, { method: 'PATCH', body: updates });
+}
+
+// --- Courses ---
+export async function fetchCoursesBackend(): Promise<Course[]> {
+  return api<Course[]>('/api/courses');
+}
+
+// --- Enrollments ---
+export async function fetchEnrollmentsBackend(): Promise<CourseEnrollment[]> {
+  return api<CourseEnrollment[]>('/api/enrollments');
+}
+
+export async function addEnrollmentBackend(e: Omit<CourseEnrollment, 'id'>): Promise<CourseEnrollment> {
+  return api<CourseEnrollment>('/api/enrollments', { method: 'POST', body: e });
+}
+
+export async function removeEnrollmentBackend(courseId: string, studentId: string): Promise<void> {
+  await api(`/api/enrollments?courseId=${courseId}&studentId=${studentId}`, { method: 'DELETE' });
+}
+
+// --- Attendances ---
+export async function fetchAttendancesBackend(): Promise<Attendance[]> {
+  return api<Attendance[]>('/api/attendances');
+}
+
+export async function upsertAttendanceBackend(
+  courseId: string,
+  studentId: string,
+  sessionDate: string,
+  sessionStartTime: string,
+  status: Attendance['status'],
+  reason?: string,
+  _markedBy?: string
+): Promise<void> {
+  await api('/api/attendances', {
+    method: 'PUT',
+    body: { courseId, studentId, sessionDate, sessionStartTime, status, absenceReason: reason },
+  });
+}
+
+// --- Payments ---
+export async function fetchPaymentsBackend(): Promise<Payment[]> {
+  return api<Payment[]>('/api/payments');
+}
+
+export async function updatePaymentStatusBackend(id: string, status: Payment['status'], reference?: string): Promise<void> {
+  await api(`/api/payments/${id}`, { method: 'PATCH', body: { status, paymentReference: reference } });
+}
+
+// --- Events ---
+export async function fetchEventsBackend(): Promise<Event[]> {
+  return api<Event[]>('/api/events');
+}
+
+export async function addEventBackend(e: Omit<Event, 'id' | 'createdAt' | 'createdBy'>, _createdBy: string): Promise<Event> {
+  return api<Event>('/api/events', { method: 'POST', body: e });
+}
+
+export async function updateEventBackend(id: string, updates: Partial<Event>): Promise<void> {
+  const body: Record<string, unknown> = {};
+  if (updates.title != null) body.title = updates.title;
+  if (updates.description != null) body.description = updates.description;
+  if (updates.eventDate != null) body.eventDate = updates.eventDate;
+  if (updates.eventTime != null) body.eventTime = updates.eventTime;
+  if (updates.location != null) body.location = updates.location;
+  if (updates.isPublic != null) body.isPublic = updates.isPublic;
+  await api(`/api/events/${id}`, { method: 'PATCH', body });
+}
+
+export async function deleteEventBackend(id: string): Promise<void> {
+  await api(`/api/events/${id}`, { method: 'DELETE' });
+}

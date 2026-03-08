@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { Student, Course, CourseEnrollment, Attendance, Payment, Event } from '../types/database';
+import { isBackendConfigured } from '../lib/apiClient';
+import { useAuth } from './AuthContext';
 import {
   mockStudents,
   mockCourses,
@@ -8,6 +10,7 @@ import {
   mockPayments,
   mockEvents,
 } from '../data/mockData';
+import * as apiBackend from '../services/apiBackend';
 
 type DataContextType = {
   students: Student[];
@@ -16,16 +19,19 @@ type DataContextType = {
   attendances: Attendance[];
   payments: Payment[];
   events: Event[];
-  addStudent: (s: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateStudent: (id: string, s: Partial<Student>) => void;
-  setStudentActive: (id: string, active: boolean) => void;
-  addEnrollment: (e: Omit<CourseEnrollment, 'id'>) => void;
-  removeEnrollment: (courseId: string, studentId: string) => void;
-  setAttendance: (courseId: string, studentId: string, sessionDate: string, status: Attendance['status'], reason?: string) => void;
-  addEvent: (e: Omit<Event, 'id' | 'createdAt' | 'createdBy'>) => void;
-  updateEvent: (id: string, e: Partial<Event>) => void;
-  deleteEvent: (id: string) => void;
-  updatePaymentStatus: (id: string, status: Payment['status'], reference?: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+  addStudent: (s: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateStudent: (id: string, s: Partial<Student>) => Promise<void>;
+  setStudentActive: (id: string, active: boolean) => Promise<void>;
+  addEnrollment: (e: Omit<CourseEnrollment, 'id'>) => Promise<void>;
+  removeEnrollment: (courseId: string, studentId: string) => Promise<void>;
+  setAttendance: (courseId: string, studentId: string, sessionDate: string, status: Attendance['status'], reason?: string) => Promise<void>;
+  addEvent: (e: Omit<Event, 'id' | 'createdAt' | 'createdBy'>) => Promise<void>;
+  updateEvent: (id: string, e: Partial<Event>) => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>;
+  updatePaymentStatus: (id: string, status: Payment['status'], reference?: string) => Promise<void>;
 };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -35,82 +41,141 @@ function generateId() {
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [students, setStudents] = useState<Student[]>(mockStudents);
-  const [courses] = useState<Course[]>(mockCourses);
-  const [enrollments, setEnrollments] = useState<CourseEnrollment[]>(mockEnrollments);
-  const [attendances, setAttendances] = useState<Attendance[]>(mockAttendances);
-  const [payments, setPayments] = useState<Payment[]>(mockPayments);
-  const [events, setEvents] = useState<Event[]>(mockEvents);
+  const useDb = isBackendConfigured();
+  const { user } = useAuth();
 
-  const addStudent = useCallback((s: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const now = new Date().toISOString();
-    setStudents((prev) => [
-      ...prev,
-      { ...s, id: generateId(), createdAt: now, updatedAt: now } as Student,
-    ]);
-  }, []);
+  const [students, setStudents] = useState<Student[]>(useDb ? [] : mockStudents);
+  const [courses, setCourses] = useState<Course[]>(useDb ? [] : mockCourses);
+  const [enrollments, setEnrollments] = useState<CourseEnrollment[]>(useDb ? [] : mockEnrollments);
+  const [attendances, setAttendances] = useState<Attendance[]>(useDb ? [] : mockAttendances);
+  const [payments, setPayments] = useState<Payment[]>(useDb ? [] : mockPayments);
+  const [events, setEvents] = useState<Event[]>(useDb ? [] : mockEvents);
+  const [isLoading, setIsLoading] = useState(useDb);
+  const [error, setError] = useState<string | null>(null);
 
-  const updateStudent = useCallback((id: string, updates: Partial<Student>) => {
-    setStudents((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updates, updatedAt: new Date().toISOString() } : s))
-    );
-  }, []);
+  const loadFromDb = useCallback(async () => {
+    if (!useDb) return;
+    if (useDb && !user) return; // Con backend: carica solo se autenticato
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [s, c, e, a, p, ev] = await Promise.all([
+        apiBackend.fetchStudentsBackend(),
+        apiBackend.fetchCoursesBackend(),
+        apiBackend.fetchEnrollmentsBackend(),
+        apiBackend.fetchAttendancesBackend(),
+        apiBackend.fetchPaymentsBackend(),
+        apiBackend.fetchEventsBackend(),
+      ]);
+      setStudents(s);
+      setCourses(c);
+      setEnrollments(e);
+      setAttendances(a);
+      setPayments(p);
+      setEvents(ev);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Errore caricamento dati');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [useDb, user]);
 
-  const setStudentActive = useCallback((id: string, active: boolean) => {
-    updateStudent(id, { isActive: active });
+  useEffect(() => {
+    loadFromDb();
+  }, [loadFromDb, user?.id]);
+
+  const refresh = useCallback(() => loadFromDb(), [loadFromDb]);
+
+  const addStudent = useCallback(async (s: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (useDb) {
+      const created = await apiBackend.addStudentBackend(s);
+      setStudents((prev) => [...prev, created]);
+    } else {
+      const now = new Date().toISOString();
+      setStudents((prev) => [...prev, { ...s, id: generateId(), createdAt: now, updatedAt: now } as Student]);
+    }
+  }, [useDb]);
+
+  const updateStudent = useCallback(async (id: string, updates: Partial<Student>) => {
+    if (useDb) {
+      await apiBackend.updateStudentBackend(id, updates);
+      setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates, updatedAt: new Date().toISOString() } : s)));
+    } else {
+      setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates, updatedAt: new Date().toISOString() } : s)));
+    }
+  }, [useDb]);
+
+  const setStudentActive = useCallback(async (id: string, active: boolean) => {
+    await updateStudent(id, { isActive: active });
   }, [updateStudent]);
 
-  const addEnrollment = useCallback((e: Omit<CourseEnrollment, 'id'>) => {
+  const addEnrollment = useCallback(async (e: Omit<CourseEnrollment, 'id'>) => {
     if (enrollments.some((x) => x.courseId === e.courseId && x.studentId === e.studentId)) return;
-    setEnrollments((prev) => [...prev, { ...e, id: generateId() }]);
-  }, [enrollments]);
+    if (useDb) {
+      const created = await apiBackend.addEnrollmentBackend(e);
+      setEnrollments((prev) => [...prev, created]);
+    } else {
+      setEnrollments((prev) => [...prev, { ...e, id: generateId() }]);
+    }
+  }, [useDb, enrollments]);
 
-  const removeEnrollment = useCallback((courseId: string, studentId: string) => {
+  const removeEnrollment = useCallback(async (courseId: string, studentId: string) => {
+    if (useDb) await apiBackend.removeEnrollmentBackend(courseId, studentId);
     setEnrollments((prev) => prev.filter((x) => !(x.courseId === courseId && x.studentId === studentId)));
-  }, []);
+  }, [useDb]);
 
   const setAttendance = useCallback(
-    (courseId: string, studentId: string, sessionDate: string, status: Attendance['status'], reason?: string) => {
-      setAttendances((prev) => {
-        const existing = prev.find(
-          (a) => a.courseId === courseId && a.studentId === studentId && a.sessionDate === sessionDate
-        );
+    async (courseId: string, studentId: string, sessionDate: string, status: Attendance['status'], reason?: string) => {
+      const existing = attendances.find(
+        (a) => a.courseId === courseId && a.studentId === studentId && a.sessionDate === sessionDate
+      );
+      const sessionStartTime = existing?.sessionStartTime ?? '09:00';
+
+      if (useDb) {
+        await apiBackend.upsertAttendanceBackend(courseId, studentId, sessionDate, sessionStartTime, status, reason);
+        await loadFromDb();
+      } else {
         const upd = {
           id: existing?.id ?? generateId(),
           courseId,
           studentId,
           sessionDate,
-          sessionStartTime: existing?.sessionStartTime ?? '09:00',
+          sessionStartTime,
           status,
           absenceReason: reason,
           markedAt: new Date().toISOString(),
           markedBy: 'user-admin-1',
         };
-        if (existing) {
-          return prev.map((a) => (a.id === existing.id ? upd : a));
-        }
-        return [...prev, upd];
-      });
+        setAttendances((prev) => {
+          if (existing) return prev.map((a) => (a.id === existing.id ? upd : a));
+          return [...prev, upd];
+        });
+      }
     },
-    []
+    [useDb, attendances, loadFromDb]
   );
 
-  const addEvent = useCallback((e: Omit<Event, 'id' | 'createdAt' | 'createdBy'>) => {
-    setEvents((prev) => [
-      ...prev,
-      { ...e, id: generateId(), createdAt: new Date().toISOString(), createdBy: 'user-admin-1' },
-    ]);
-  }, []);
+  const addEvent = useCallback(async (e: Omit<Event, 'id' | 'createdAt' | 'createdBy'>) => {
+    if (useDb) {
+      const created = await apiBackend.addEventBackend(e, '');
+      setEvents((prev) => [...prev, created]);
+    } else {
+      setEvents((prev) => [...prev, { ...e, id: generateId(), createdAt: new Date().toISOString(), createdBy: 'user-admin-1' }]);
+    }
+  }, [useDb]);
 
-  const updateEvent = useCallback((id: string, updates: Partial<Event>) => {
-    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
-  }, []);
+  const updateEvent = useCallback(async (id: string, updates: Partial<Event>) => {
+    if (useDb) await apiBackend.updateEventBackend(id, updates);
+    setEvents((prev) => prev.map((ev) => (ev.id === id ? { ...ev, ...updates } : ev)));
+  }, [useDb]);
 
-  const deleteEvent = useCallback((id: string) => {
+  const deleteEvent = useCallback(async (id: string) => {
+    if (useDb) await apiBackend.deleteEventBackend(id);
     setEvents((prev) => prev.filter((e) => e.id !== id));
-  }, []);
+  }, [useDb]);
 
-  const updatePaymentStatus = useCallback((id: string, status: Payment['status'], reference?: string) => {
+  const updatePaymentStatus = useCallback(async (id: string, status: Payment['status'], reference?: string) => {
+    if (useDb) await apiBackend.updatePaymentStatusBackend(id, status, reference);
     setPayments((prev) =>
       prev.map((p) =>
         p.id === id
@@ -118,7 +183,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           : p
       )
     );
-  }, []);
+  }, [useDb]);
 
   return (
     <DataContext.Provider
@@ -129,6 +194,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         attendances,
         payments,
         events,
+        isLoading,
+        error,
+        refresh,
         addStudent,
         updateStudent,
         setStudentActive,

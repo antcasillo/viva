@@ -11,7 +11,7 @@ export function BachecaPage() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<Partial<Event>>({});
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editing) {
       const updates = { ...form };
       if (updates.eventDate && updates.eventDate.includes('-')) {
@@ -20,10 +20,10 @@ export function BachecaPage() {
           updates.eventDate = parseDateToISO(updates.eventDate);
         }
       }
-      updateEvent(editing.id, updates);
+      await updateEvent(editing.id, updates);
       setEditing(null);
     } else if (creating && form.title && form.description && form.eventDate) {
-      addEvent({
+      await addEvent({
         title: form.title,
         description: form.description,
         eventDate: parseDateToISO(form.eventDate),

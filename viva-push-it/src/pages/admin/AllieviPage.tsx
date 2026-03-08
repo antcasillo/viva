@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatDate, parseDateToISO } from '../../utils/dateFormat';
-import type { Student } from '../../types/database';
+import { isBackendConfigured } from '../../lib/apiClient';
+import { fetchAllProfilesBackend } from '../../services/apiBackend';
+import type { Student, User } from '../../types/database';
 
 export function AllieviPage() {
   const { students, enrollments, addStudent, updateStudent, setStudentActive } = useData();
+  const [profiles, setProfiles] = useState<User[]>([]);
+  useEffect(() => {
+    if (isBackendConfigured()) fetchAllProfilesBackend().then(setProfiles);
+  }, []);
   const [editing, setEditing] = useState<Student | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<Partial<Student>>({});
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editing) {
       const updates = { ...form };
       if (updates.dateOfBirth && updates.dateOfBirth.includes('-')) {
@@ -18,10 +24,10 @@ export function AllieviPage() {
           updates.dateOfBirth = parseDateToISO(updates.dateOfBirth);
         }
       }
-      updateStudent(editing.id, updates);
+      await updateStudent(editing.id, updates);
       setEditing(null);
     } else if (creating && form.userId && form.firstName && form.lastName && form.dateOfBirth && form.parentName && form.parentPhone && form.parentEmail) {
-      addStudent({
+      await addStudent({
         userId: form.userId,
         firstName: form.firstName,
         lastName: form.lastName,
@@ -97,12 +103,26 @@ export function AllieviPage() {
             </div>
             {creating && (
               <div>
-                <label className="block text-sm text-slate-600 mb-1">ID Genitore (user-1, user-2, ...) *</label>
-                <input
-                  value={form.userId ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg"
-                />
+                <label className="block text-sm text-slate-600 mb-1">Genitore *</label>
+                {isBackendConfigured() && profiles.length > 0 ? (
+                  <select
+                    value={form.userId ?? ''}
+                    onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  >
+                    <option value="">Seleziona genitore</option>
+                    {profiles.filter((p) => p.role === 'user').map((p) => (
+                      <option key={p.id} value={p.id}>{p.fullName} ({p.email})</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    value={form.userId ?? ''}
+                    onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
+                    placeholder="user-1, user-2, ... (mock)"
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                )}
               </div>
             )}
             <div>

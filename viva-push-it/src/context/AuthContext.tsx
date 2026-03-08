@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import Cookies from 'js-cookie';
 import type { User, UserRole } from '../types/database';
+import { apiClient, isBackendConfigured } from '../lib/apiClient';
+import { loginBackend, fetchProfileBackend } from '../services/apiBackend';
 import { getUserByEmail, checkPassword } from '../store/usersStore';
 
 const COOKIE_NAME = 'viva_session';
@@ -61,23 +63,40 @@ function clearStoredUser() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(getStoredUser);
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = getStoredUser();
-    if (stored && !user) setUser(stored);
+    if (isBackendConfigured()) {
+      fetchProfileBackend().then((profile) => {
+        if (profile) setUser(profile);
+        setIsLoading(false);
+      });
+    } else {
+      const stored = getStoredUser();
+      setUser(stored);
+      setIsLoading(false);
+    }
   }, []);
 
   const login = useCallback(async (email: string, password: string, rememberMe: boolean) => {
     setIsLoading(true);
     try {
+      if (isBackendConfigured()) {
+        const result = await loginBackend(email, password, rememberMe);
+        if (result.success && result.user) {
+          setUser(result.user);
+          setStoredUser(result.user, rememberMe);
+          return { success: true, user: result.user };
+        }
+        return { success: false, error: result.error ?? 'Email o password non corretti' };
+      }
+
       await new Promise((r) => setTimeout(r, 400));
       const foundUser = getUserByEmail(email);
       if (!foundUser || !checkPassword(email, password)) {
         return { success: false, error: 'Email o password non corretti' };
       }
-
       setUser(foundUser);
       setStoredUser(foundUser, rememberMe);
       return { success: true, user: foundUser };
@@ -87,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    if (isBackendConfigured()) apiClient.clearToken();
     setUser(null);
     clearStoredUser();
   }, []);

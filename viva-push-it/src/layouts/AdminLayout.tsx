@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: '📊' },
@@ -15,6 +16,7 @@ const navItems = [
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { user, logout } = useAuth();
+  const { isLoading, error, refresh } = useData();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -85,7 +87,18 @@ export function AdminLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
+            <div className="animate-spin w-10 h-10 border-2 border-primary-600 border-t-transparent rounded-full" />
+          </div>
+        )}
+        {error && (
+          <div className="p-4 bg-amber-50 border-b border-amber-200 flex items-center justify-between">
+            <span className="text-amber-800">{error}</span>
+            <button onClick={refresh} className="text-amber-700 underline text-sm">Riprova</button>
+          </div>
+        )}
         <Outlet />
       </main>
     </div>

@@ -39,9 +39,9 @@ export function ProssimeLezioniPage() {
 
   nextLessons.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  const handleSegnalaAssenza = () => {
+  const handleSegnalaAssenza = async () => {
     if (!absenceModal) return;
-    setAttendance(
+    await setAttendance(
       absenceModal.courseId,
       absenceModal.studentId,
       absenceModal.sessionDate,

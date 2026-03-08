@@ -1,24 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getUsers, addUser, updateUser, deleteUser, setUserPassword } from '../../store/usersStore';
+import { isBackendConfigured } from '../../lib/apiClient';
+import { fetchAllProfilesBackend, updateProfileBackend } from '../../services/apiBackend';
 import type { User, UserRole } from '../../types/database';
 
 export function UtentiPage() {
-  const [users, setUsers] = useState(getUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [editing, setEditing] = useState<User | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<Partial<User> & { password?: string }>({});
 
-  const refresh = () => setUsers(getUsers());
+  const useDb = isBackendConfigured();
 
-  const handleSave = () => {
+  useEffect(() => {
+    if (useDb) {
+      fetchAllProfilesBackend().then(setUsers);
+    } else {
+      setUsers(getUsers());
+    }
+  }, [useDb]);
+
+  const refresh = () => {
+    if (useDb) fetchAllProfilesBackend().then(setUsers);
+    else setUsers(getUsers());
+  };
+
+  const handleSave = async () => {
     if (editing) {
-      updateUser(editing.id, form);
-      if (form.password) {
-        setUserPassword(editing.id, form.password);
+      if (useDb) {
+        await updateProfileBackend(editing.id, {
+          full_name: form.fullName ?? editing.fullName,
+          role: form.role ?? editing.role,
+        });
+      } else {
+        updateUser(editing.id, form);
+        if (form.password) setUserPassword(editing.id, form.password);
       }
       setEditing(null);
       refresh();
     } else if (creating && form.email && form.fullName && form.role) {
+      if (useDb) {
+        // Con il backend i nuovi utenti si creano tramite la pagina Registrati o lo script di seed
+        alert('Con il backend, usa "Registrati" nella pagina di login oppure lo script: npm run db:seed');
+        return;
+      }
       addUser(
         { email: form.email, fullName: form.fullName, role: form.role as UserRole },
         form.password ?? 'user123'
@@ -30,10 +55,13 @@ export function UtentiPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Eliminare questo utente?')) {
-      deleteUser(id);
-      refresh();
+    if (!confirm('Eliminare questo utente?')) return;
+    if (useDb) {
+      alert('L\'eliminazione utenti va effettuata direttamente sul database.');
+      return;
     }
+    deleteUser(id);
+    refresh();
   };
 
   return (
@@ -47,6 +75,12 @@ export function UtentiPage() {
           + Nuovo utente
         </button>
       </div>
+
+      {useDb && (
+        <p className="mb-4 text-sm text-slate-600">
+          Con il backend: i nuovi utenti si registrano dalla pagina di login. Per dati demo: <code className="bg-slate-100 px-1 rounded">npm run db:seed</code>
+        </p>
+      )}
 
       {(editing || creating) && (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 mb-6">
@@ -81,18 +115,20 @@ export function UtentiPage() {
                 <option value="user">Utente (Genitore)</option>
               </select>
             </div>
-            <div>
-              <label className="block text-sm text-slate-600 mb-1">
-                {editing ? 'Nuova password (lascia vuoto per non cambiare)' : 'Password *'}
-              </label>
-              <input
-                type="password"
-                value={form.password ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                placeholder={editing ? "Lascia vuoto per non cambiare" : "user123"}
-                className="w-full px-3 py-2 border rounded-lg"
-              />
-            </div>
+            {!useDb && (
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">
+                  {editing ? 'Nuova password (lascia vuoto per non cambiare)' : 'Password *'}
+                </label>
+                <input
+                  type="password"
+                  value={form.password ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  placeholder={editing ? 'Lascia vuoto per non cambiare' : 'user123'}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            )}
           </div>
           <div className="flex gap-2 mt-4">
             <button onClick={handleSave} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
