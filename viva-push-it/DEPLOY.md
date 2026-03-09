@@ -79,6 +79,9 @@ Oppure: `/root/viva.sh` (se hai installato il wrapper)
 ### Database vuoto
 → `cd viva-push-it && npm run db:seed`
 
+### Svuotare i dati demo (Luca Bianchi, corsi, ecc.)
+→ `cd viva-push-it && npm run db:clear-demo` — elimina allievi, corsi, presenze, pagamenti, eventi. Restano i profili utenti.
+
 ---
 
 ## Credenziali demo (dopo seed)

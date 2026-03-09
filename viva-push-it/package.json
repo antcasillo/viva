@@ -13,6 +13,7 @@
     "db:seed": "node scripts/seed-sqlite.cjs",
     "db:check-password": "node scripts/check-password.cjs",
     "db:reset-admin-password": "node scripts/reset-admin-password.cjs",
+    "db:clear-demo": "node scripts/clear-demo-data.cjs",
     "db:backup": "node scripts/backup-db.cjs"
   },
   "dependencies": {

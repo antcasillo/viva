@@ -45,8 +45,9 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 // In produzione: serve il frontend buildato (uploads già serviti sopra)
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '..', 'dist');
-  app.use(express.static(distPath));
+  app.use(express.static(distPath, { maxAge: '1y' }));
   app.get('*', (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
