@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getUsers, addUser, updateUser, deleteUser, setUserPassword } from '../../store/usersStore';
 import { isBackendConfigured } from '../../lib/apiClient';
-import { fetchAllProfilesBackend, updateProfileBackend, resetUserPasswordBackend, createProfileBackend } from '../../services/apiBackend';
+import { fetchAllProfilesBackend, updateProfileBackend, resetUserPasswordBackend, createProfileBackend, deleteProfileBackend } from '../../services/apiBackend';
 import type { User, UserRole } from '../../types/database';
 
 export function UtentiPage() {
@@ -75,10 +75,15 @@ export function UtentiPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (!confirm('Eliminare questo utente?')) return;
+  const handleDelete = async (id: string) => {
+    if (!confirm('Eliminare questo utente? Gli allievi collegati verranno eliminati.')) return;
     if (useDb) {
-      alert('L\'eliminazione utenti va effettuata direttamente sul database.');
+      try {
+        await deleteProfileBackend(id);
+        refresh();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Errore eliminazione');
+      }
       return;
     }
     deleteUser(id);

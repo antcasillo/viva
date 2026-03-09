@@ -117,7 +117,7 @@ router.post('/change-password', authMiddleware, (req, res) => {
   }
 
   const hash = bcrypt.hashSync(newPassword, 10);
-  db.prepare('UPDATE profiles SET password_hash = ?, updated_at = datetime("now") WHERE id = ?').run(hash, req.user.id);
+  db.prepare('UPDATE profiles SET password_hash = ?, updated_at = datetime('now') WHERE id = ?').run(hash, req.user.id);
   res.json({ ok: true });
 });
 
@@ -140,7 +140,7 @@ router.post('/avatar', authMiddleware, (req, res, next) => {
     try { if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } catch (_) {}
   }
 
-  db.prepare('UPDATE profiles SET avatar_url = ?, updated_at = datetime("now") WHERE id = ?').run(avatarPath, userId);
+  db.prepare('UPDATE profiles SET avatar_url = ?, updated_at = datetime('now') WHERE id = ?').run(avatarPath, userId);
   res.json({ ok: true, avatarUrl: avatarPath });
 });
 
@@ -152,7 +152,7 @@ router.delete('/avatar', authMiddleware, (req, res) => {
     const filePath = path.join(uploadsDir, path.basename(current.avatar_url));
     try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (_) {}
   }
-  db.prepare('UPDATE profiles SET avatar_url = NULL, updated_at = datetime("now") WHERE id = ?').run(userId);
+  db.prepare('UPDATE profiles SET avatar_url = NULL, updated_at = datetime('now') WHERE id = ?').run(userId);
   res.json({ ok: true });
 });
 

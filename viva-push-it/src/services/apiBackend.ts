@@ -109,6 +109,10 @@ export async function fetchAllProfilesBackend(): Promise<User[]> {
   return api<User[]>('/api/profiles');
 }
 
+export async function deleteProfileBackend(userId: string): Promise<void> {
+  await api(`/api/profiles/${userId}`, { method: 'DELETE' });
+}
+
 export async function updateProfileBackend(userId: string, updates: { full_name?: string; phone?: string; role?: string }): Promise<void> {
   const body: Record<string, string> = {};
   if (updates.full_name != null) body.fullName = updates.full_name;
