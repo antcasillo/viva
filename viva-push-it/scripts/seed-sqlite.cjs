@@ -17,18 +17,9 @@ if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 const db = new Database(dbPath);
 db.pragma('foreign_keys = ON');
 
-// Esegui schema
-const schemaPath = path.join(__dirname, '..', 'server', 'schema.sql');
-const schema = fs.readFileSync(schemaPath, 'utf8');
-db.exec(schema);
-
-// Migration: aggiungi phone a profiles se non esiste
-try {
-  const cols = db.prepare('PRAGMA table_info(profiles)').all();
-  if (!cols.some((c) => c.name === 'phone')) {
-    db.exec('ALTER TABLE profiles ADD COLUMN phone TEXT');
-  }
-} catch (_) {}
+// Inizializza schema (stile gestionale: migrations unificate)
+const { initDb } = require('../server/migrations');
+initDb(db);
 
 function uuid() {
   return crypto.randomUUID();

@@ -13,22 +13,23 @@ Applicazione web per la gestione di una scuola di musica: direzione, insegnanti,
 
 ```
 viva-push-it/
+├── server/
+│   ├── migrations.js    # Schema DB unificato (stile gestionale-push)
+│   ├── db.js             # SQLite + backup automatico
+│   └── routes/           # API Express
 ├── src/
 │   ├── components/       # Componenti riutilizzabili
 │   ├── context/          # AuthContext, DataContext
 │   ├── data/             # mockData.ts (fallback)
 │   ├── layouts/          # AdminLayout, UserLayout
-│   ├── lib/              # supabase client, dbMappers
-│   ├── services/         # api.ts (CRUD Supabase)
+│   ├── lib/              # apiClient, dbMappers
+│   ├── services/         # apiBackend.ts (CRUD verso Express)
 │   ├── pages/            # Pagine per area
 │   │   ├── admin/        # Dashboard, Allievi, Presenze, Contabile, Calendario, Bacheca, Utenti
 │   │   └── user/         # Profilo, Prossime Lezioni, Pagamenti, Eventi
 │   └── types/            # database.ts (schema TypeScript)
-├── supabase/
-│   └── migrations/      # 001_initial_schema.sql, 002_rls_and_trigger.sql
 ├── scripts/
-│   ├── seed-mock-data.ts # Dump mock (legacy)
-│   └── seed-supabase.ts  # Popola Supabase con dati demo
+│   └── seed-sqlite.cjs   # Popola SQLite con dati demo
 └── .env.example
 ```
 
@@ -59,9 +60,9 @@ Apri [http://localhost:5173](http://localhost:5173).
 
 ## Schema Database
 
-Entità principali: **Utenti**, **Allievi**, **Corsi**, **Presenze**, **Pagamenti**, **Eventi**.
+Entità principali: **Profiles** (utenti), **Allievi**, **Corsi**, **Presenze**, **Pagamenti**, **Eventi**.
 
-Vedi `src/types/database.ts` e `supabase/migrations/001_initial_schema.sql`.
+Schema unificato in `server/migrations.js` (stile gestionale-push: init_db + ALTER per nuove colonne). Vedi `src/types/database.ts`.
 
 ## Mock Data
 

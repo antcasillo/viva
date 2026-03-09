@@ -2,6 +2,8 @@
 
 Questa guida descrive **esattamente** cosa fare per far funzionare l'app con il database reale.
 
+**Funzionalità admin:** Gestione Allievi, **Corsi** (crea/modifica/elimina), Registro Presenze, **Situazione Contabile** (crea/modifica/elimina pagamenti), **Calendario** (eventi editabili, clic su data vuota per nuovo evento), Bacheca Eventi, Gestione Utenti.
+
 ---
 
 ## Prerequisiti
@@ -56,7 +58,7 @@ npm run db:seed
 **Cosa succede:**
 1. Viene creata la cartella `data/` (se non esiste)
 2. Viene creato il file `data/viva.db` (database SQLite)
-3. Vengono create le tabelle (profili, allievi, corsi, ecc.)
+3. Vengono create le tabelle tramite `server/migrations.js` (stile gestionale-push)
 4. Vengono inseriti 6 utenti, 5 allievi, 3 corsi, iscrizioni, presenze, pagamenti e 3 eventi
 
 **Output atteso:**
@@ -78,7 +80,7 @@ npm run db:seed
 Credenziali: admin@vivapush.it / admin123
 ```
 
-**Se esegui di nuovo:** gli utenti già presenti vengono saltati; corsi, allievi e dati correlati vengono creati solo se le tabelle sono vuote.
+**Se esegui di nuovo:** gli utenti già presenti vengono saltati; corsi, allievi e dati correlati vengono creati solo se le tabelle sono vuote. **I tuoi dati (nome admin modificato, allievi creati, ecc.) restano salvati** finché non elimini il database.
 
 ---
 
@@ -143,6 +145,16 @@ npm run dev
 
 ---
 
+## Backup automatico del database
+
+Il database viene salvato automaticamente:
+- **All'avvio del server**: copia di `data/viva.db` in `data/backups/viva-YYYYMMDDHHMMSS.db`
+- **Ogni ora**: nuovo backup (vengono mantenuti gli ultimi 24)
+
+Per un backup manuale: `npm run db:backup`
+
+---
+
 ## Riepilogo ordine operazioni
 
 | Ordine | Comando            | Cosa fa                         |
@@ -171,7 +183,7 @@ npm run dev
 - **Cosa fare:** verifica che il server sia avviato (`npm run server`) e che mostri "in ascolto su http://localhost:3001".
 
 ### "Email o password non corretti"
-- **Cosa fare:** esegui di nuovo `npm run db:seed` e riprova il login.
+- **Cosa fare:** prova con `admin@vivapush.it` / `admin123`. Se hai cambiato la password e non la ricordi, dovrai ricominciare da zero (vedi sotto).
 
 ### Porta 3001 o 5173 già in uso
 - **Cosa fare:** chiudi altre applicazioni che usano quelle porte, oppure modifica la porta nel codice (vedi `server/index.js` per la 3001, `vite.config.ts` per la 5173).
@@ -187,6 +199,10 @@ npm run db:seed
 ```
 
 Poi riavvia il server con `npm run server`.
+
+---
+
+**ATTENZIONE:** Questa operazione **cancella tutti i dati** (nome admin modificato, allievi creati, pagamenti, eventi, ecc.). Usala solo se vuoi davvero ripartire da zero.
 
 ---
 
@@ -206,6 +222,7 @@ Poi riavvia il server con `npm run server`.
    PORT=3001
    JWT_SECRET=una-stringa-segreta-lunga-e-casuale
    ```
+   Per il primo avvio senza seed: `BOOTSTRAP_ADMIN_PASSWORD=tua-password` crea l'admin iniziale.
 
 3. **Avvia il server** (es. con `pm2` o `systemd`):
    ```bash

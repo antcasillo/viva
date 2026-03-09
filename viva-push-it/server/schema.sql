@@ -1,5 +1,5 @@
--- Schema SQLite per viva.push.it
--- Eseguito automaticamente all'avvio del server
+-- Schema SQLite per viva.push.it (riferimento)
+-- SOURCE OF TRUTH: server/migrations.js (stile gestionale-push)
 
 -- Utenti (profili + credenziali)
 CREATE TABLE IF NOT EXISTS profiles (
