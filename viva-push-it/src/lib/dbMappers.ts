@@ -140,6 +140,7 @@ export function dbCourseToCourse(c: DbCourse): Course {
     dayOfWeek: c.day_of_week,
     startTime: timeToHHmm(c.start_time),
     endTime: timeToHHmm(c.end_time),
+    schedules: [{ dayOfWeek: c.day_of_week, startTime: timeToHHmm(c.start_time), endTime: timeToHHmm(c.end_time) }],
     maxStudents: c.max_students,
     room: c.room ?? undefined,
     isActive: c.is_active,

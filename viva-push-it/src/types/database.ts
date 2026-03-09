@@ -31,14 +31,21 @@ export interface Student {
   updatedAt: string;
 }
 
+export interface CourseSchedule {
+  dayOfWeek: number; // 0 = Domenica, 1 = Lunedì, etc.
+  startTime: string; // HH:mm
+  endTime: string;
+}
+
 export interface Course {
   id: string;
   name: string;
   description?: string;
   teacherName: string;
-  dayOfWeek: number; // 0 = Domenica, 1 = Lunedì, etc.
-  startTime: string; // HH:mm
-  endTime: string;
+  dayOfWeek: number; // 0 = Domenica, 1 = Lunedì, etc. - DEPRECATO: usare schedules
+  startTime: string; // HH:mm - DEPRECATO
+  endTime: string; // DEPRECATO
+  schedules: CourseSchedule[]; // uno o più giorni/orari per corso
   maxStudents: number;
   room?: string;
   isActive: boolean;

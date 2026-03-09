@@ -58,6 +58,32 @@ function initDb(db) {
   `);
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS course_schedules (
+      id TEXT PRIMARY KEY,
+      course_id TEXT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      day_of_week INTEGER NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
+      start_time TEXT NOT NULL,
+      end_time TEXT NOT NULL
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_course_schedules_course ON course_schedules(course_id)`);
+
+  // Migrazione: copia orari esistenti da courses a course_schedules
+  try {
+    const done = db.prepare("SELECT 1 FROM migrations WHERE id = 'course_schedules_migrate'").get();
+    if (!done) {
+      const courses = db.prepare('SELECT id, day_of_week, start_time, end_time FROM courses').all();
+      const insert = db.prepare(
+        'INSERT INTO course_schedules (id, course_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?, ?)'
+      );
+      for (const c of courses) {
+        insert.run(require('crypto').randomUUID(), c.id, c.day_of_week, c.start_time, c.end_time);
+      }
+      db.prepare("INSERT INTO migrations (id, executed_at) VALUES ('course_schedules_migrate', datetime('now'))").run();
+    }
+  } catch (_) {}
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS course_enrollments (
       id TEXT PRIMARY KEY,
       course_id TEXT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,

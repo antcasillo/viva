@@ -85,6 +85,13 @@ async function main() {
         { name: 'Canto Corale', description: 'Laboratorio di canto per bambini e ragazzi', teacher_name: 'Prof.ssa Francesca Neri', day_of_week: 5, start_time: '15:00', end_time: '16:30', max_students: 12, room: 'Sala Concerti' },
       ])
       .select('id');
+    if (insertedCourses?.length) {
+      await supabase.from('course_schedules').insert([
+        { course_id: insertedCourses[0].id, day_of_week: 1, start_time: '16:00', end_time: '17:00' },
+        { course_id: insertedCourses[1].id, day_of_week: 3, start_time: '17:30', end_time: '18:30' },
+        { course_id: insertedCourses[2].id, day_of_week: 5, start_time: '15:00', end_time: '16:30' },
+      ]);
+    }
     console.log('  ✓ Corsi creati:', insertedCourses?.length ?? 0);
   }
 

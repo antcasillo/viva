@@ -238,16 +238,20 @@ export function UserProfilePage() {
           <p className="text-slate-500">Nessun corso attivo.</p>
         ) : (
           <ul className="space-y-4">
-            {myCourses.map((c) => (
-              <li key={c.id} className="flex justify-between items-center py-3 border-b border-slate-100 last:border-0">
-                <div>
-                  <p className="font-medium text-slate-800">{c.name}</p>
-                  <p className="text-sm text-slate-500">
-                    {dayNames[c.dayOfWeek]} {c.startTime} - {c.endTime} • {c.room}
-                  </p>
-                </div>
-              </li>
-            ))}
+            {myCourses.map((c) => {
+              const scheds = c.schedules?.length ? c.schedules : [{ dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime }];
+              return (
+                <li key={c.id} className="flex justify-between items-center py-3 border-b border-slate-100 last:border-0">
+                  <div>
+                    <p className="font-medium text-slate-800">{c.name}</p>
+                    <p className="text-sm text-slate-500">
+                      {scheds.map((s) => `${dayNames[s.dayOfWeek]} ${s.startTime}-${s.endTime}`).join(', ')}
+                      {c.room ? ` • ${c.room}` : ''}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

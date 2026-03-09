@@ -160,13 +160,14 @@ export async function fetchCoursesBackend(): Promise<Course[]> {
 }
 
 export async function addCourseBackend(c: Omit<Course, 'id' | 'createdAt'>): Promise<Course> {
+  const schedules = c.schedules?.length
+    ? c.schedules
+    : [{ dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime }];
   const body = {
     name: c.name,
     description: c.description,
     teacherName: c.teacherName,
-    dayOfWeek: c.dayOfWeek,
-    startTime: c.startTime,
-    endTime: c.endTime,
+    schedules,
     maxStudents: c.maxStudents ?? 10,
     room: c.room,
     isActive: c.isActive ?? true,
@@ -179,9 +180,7 @@ export async function updateCourseBackend(id: string, updates: Partial<Course>):
   if (updates.name != null) body.name = updates.name;
   if (updates.description != null) body.description = updates.description;
   if (updates.teacherName != null) body.teacherName = updates.teacherName;
-  if (updates.dayOfWeek != null) body.dayOfWeek = updates.dayOfWeek;
-  if (updates.startTime != null) body.startTime = updates.startTime;
-  if (updates.endTime != null) body.endTime = updates.endTime;
+  if (updates.schedules != null) body.schedules = updates.schedules;
   if (updates.maxStudents != null) body.maxStudents = updates.maxStudents;
   if (updates.room != null) body.room = updates.room;
   if (updates.isActive != null) body.isActive = updates.isActive;

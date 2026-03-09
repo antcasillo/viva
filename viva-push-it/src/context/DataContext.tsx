@@ -22,7 +22,7 @@ type DataContextType = {
   deleteCourse: (id: string) => Promise<void>;
   addEnrollment: (e: Omit<CourseEnrollment, 'id'>) => Promise<void>;
   removeEnrollment: (courseId: string, studentId: string) => Promise<void>;
-  setAttendance: (courseId: string, studentId: string, sessionDate: string, status: Attendance['status'], reason?: string) => Promise<void>;
+  setAttendance: (courseId: string, studentId: string, sessionDate: string, status: Attendance['status'], reason?: string, sessionStartTime?: string) => Promise<void>;
   addEvent: (e: Omit<Event, 'id' | 'createdAt' | 'createdBy'>) => Promise<void>;
   updateEvent: (id: string, e: Partial<Event>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
@@ -142,11 +142,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [useDb]);
 
   const setAttendance = useCallback(
-    async (courseId: string, studentId: string, sessionDate: string, status: Attendance['status'], reason?: string) => {
+    async (courseId: string, studentId: string, sessionDate: string, status: Attendance['status'], reason?: string, sessionStartTimeArg?: string) => {
       const existing = attendances.find(
         (a) => a.courseId === courseId && a.studentId === studentId && a.sessionDate === sessionDate
       );
-      const sessionStartTime = existing?.sessionStartTime ?? '09:00';
+      const sessionStartTime = sessionStartTimeArg ?? existing?.sessionStartTime ?? '09:00';
 
       if (useDb) {
         await apiBackend.upsertAttendanceBackend(courseId, studentId, sessionDate, sessionStartTime, status, reason);

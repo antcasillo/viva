@@ -22,7 +22,10 @@ export function ProssimeLezioniPage() {
   const myEnrollments = enrollments.filter((e) => e.isActive && myStudents.some((s) => s.id === e.studentId));
 
   const today = new Date();
-  const nextLessons: { course: typeof courses[0]; student: typeof students[0]; date: Date }[] = [];
+  const nextLessons: { course: typeof courses[0]; student: typeof students[0]; date: Date; startTime: string; endTime: string }[] = [];
+
+  const getSchedules = (c: typeof courses[0]) =>
+    c.schedules?.length ? c.schedules : [{ dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime }];
 
   for (let i = 0; i < 21; i++) {
     const d = new Date(today);
@@ -31,8 +34,11 @@ export function ProssimeLezioniPage() {
     myEnrollments.forEach((enr) => {
       const course = courses.find((c) => c.id === enr.courseId);
       const student = students.find((s) => s.id === enr.studentId);
-      if (course && student && course.dayOfWeek === dayOfWeek) {
-        nextLessons.push({ course, student, date: new Date(d) });
+      if (course && student) {
+        const sched = getSchedules(course).find((s) => s.dayOfWeek === dayOfWeek);
+        if (sched) {
+          nextLessons.push({ course, student, date: new Date(d), startTime: sched.startTime, endTime: sched.endTime });
+        }
       }
     });
   }
@@ -80,7 +86,7 @@ export function ProssimeLezioniPage() {
 
       {viewMode === 'list' && (
         <div className="space-y-4">
-          {nextLessons.slice(0, 15).map(({ course, student, date }) => {
+          {nextLessons.slice(0, 15).map(({ course, student, date, startTime, endTime }) => {
             const sessionDate = date.toISOString().split('T')[0];
             const att = getAttendance(course.id, student.id, sessionDate);
             const isPreavvisato = att?.status === 'absent_preavvisato';
@@ -93,7 +99,7 @@ export function ProssimeLezioniPage() {
                   <div>
                     <h3 className="font-semibold text-slate-800">{course.name}</h3>
                     <p className="text-slate-600 mt-1">
-                      {DAY_NAMES[date.getDay()]} {formatDate(date)} • {course.startTime} - {course.endTime}
+                      {DAY_NAMES[date.getDay()]} {formatDate(date)} • {startTime} - {endTime}
                     </p>
                     <p className="text-sm text-slate-500 mt-1">
                       {student.firstName} {student.lastName}

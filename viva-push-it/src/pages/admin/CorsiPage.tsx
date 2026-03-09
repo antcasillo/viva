@@ -1,28 +1,43 @@
 import { useState } from 'react';
 import { useData } from '../../context/DataContext';
-import type { Course } from '../../types/database';
+import type { Course, CourseSchedule } from '../../types/database';
 
 const GIORNI = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+
+function defaultSchedule(): CourseSchedule {
+  return { dayOfWeek: 1, startTime: '09:00', endTime: '10:00' };
+}
 
 export function CorsiPage() {
   const { courses, enrollments, addCourse, updateCourse, deleteCourse } = useData();
   const [editing, setEditing] = useState<Course | null>(null);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState<Partial<Course>>({});
+  const [form, setForm] = useState<Partial<Course> & { schedules?: CourseSchedule[] }>({});
+
+  const formSchedules =
+    form.schedules ??
+    (editing?.schedules?.length
+      ? editing.schedules
+      : editing
+        ? [{ dayOfWeek: editing.dayOfWeek, startTime: editing.startTime, endTime: editing.endTime }]
+        : [defaultSchedule()]);
 
   const handleSave = async () => {
     if (editing) {
-      await updateCourse(editing.id, form);
+      await updateCourse(editing.id, { ...form, schedules: formSchedules });
       setEditing(null);
       setForm({});
-    } else if (creating && form.name && form.teacherName != null && form.dayOfWeek != null && form.startTime && form.endTime) {
+    } else if (creating && form.name && form.teacherName != null && formSchedules.length > 0) {
+      const valid = formSchedules.every((s) => s.startTime && s.endTime);
+      if (!valid) return;
       await addCourse({
         name: form.name,
         description: form.description,
         teacherName: form.teacherName,
-        dayOfWeek: form.dayOfWeek,
-        startTime: form.startTime,
-        endTime: form.endTime,
+        schedules: formSchedules,
+        dayOfWeek: formSchedules[0].dayOfWeek,
+        startTime: formSchedules[0].startTime,
+        endTime: formSchedules[0].endTime,
         maxStudents: form.maxStudents ?? 10,
         room: form.room,
         isActive: form.isActive ?? true,
@@ -84,35 +99,90 @@ export function CorsiPage() {
                 className="w-full px-3 py-2 border rounded-lg"
               />
             </div>
-            <div>
-              <label className="block text-sm text-slate-600 mb-1">Giorno *</label>
-              <select
-                value={form.dayOfWeek ?? editing?.dayOfWeek ?? 1}
-                onChange={(e) => setForm((f) => ({ ...f, dayOfWeek: parseInt(e.target.value, 10) }))}
-                className="w-full px-3 py-2 border rounded-lg"
-              >
-                {GIORNI.map((g, i) => (
-                  <option key={i} value={i}>{g}</option>
+            <div className="md:col-span-2">
+              <label className="block text-sm text-slate-600 mb-2">Giorni e orari *</label>
+              <div className="space-y-3">
+                {formSchedules.map((sched, idx) => (
+                  <div key={idx} className="flex flex-wrap gap-2 items-end p-3 bg-slate-50 rounded-lg">
+                    <div className="flex-1 min-w-[120px]">
+                      <label className="block text-xs text-slate-500 mb-1">Giorno</label>
+                      <select
+                        value={sched.dayOfWeek}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            schedules: formSchedules.map((s, i) =>
+                              i === idx ? { ...s, dayOfWeek: parseInt(e.target.value, 10) } : s
+                            ),
+                          }))
+                        }
+                        className="w-full px-3 py-2 border rounded-lg"
+                      >
+                        {GIORNI.map((g, i) => (
+                          <option key={i} value={i}>{g}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs text-slate-500 mb-1">Inizio</label>
+                      <input
+                        type="time"
+                        value={sched.startTime}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            schedules: formSchedules.map((s, i) =>
+                              i === idx ? { ...s, startTime: e.target.value } : s
+                            ),
+                          }))
+                        }
+                        className="w-full px-3 py-2 border rounded-lg"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs text-slate-500 mb-1">Fine</label>
+                      <input
+                        type="time"
+                        value={sched.endTime}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            schedules: formSchedules.map((s, i) =>
+                              i === idx ? { ...s, endTime: e.target.value } : s
+                            ),
+                          }))
+                        }
+                        className="w-full px-3 py-2 border rounded-lg"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          schedules: formSchedules.filter((_, i) => i !== idx),
+                        }))
+                      }
+                      disabled={formSchedules.length <= 1}
+                      className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Rimuovi
+                    </button>
+                  </div>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm text-slate-600 mb-1">Ora inizio *</label>
-              <input
-                type="time"
-                value={form.startTime ?? editing?.startTime ?? '09:00'}
-                onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-600 mb-1">Ora fine *</label>
-              <input
-                type="time"
-                value={form.endTime ?? editing?.endTime ?? '10:00'}
-                onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg"
-              />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      schedules: [...formSchedules, defaultSchedule()],
+                    }))
+                  }
+                  className="text-sm text-primary-600 hover:underline"
+                >
+                  + Aggiungi altro orario
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm text-slate-600 mb-1">Max allievi</label>
@@ -160,8 +230,7 @@ export function CorsiPage() {
             <tr>
               <th className="text-left p-4">Nome</th>
               <th className="text-left p-4">Insegnante</th>
-              <th className="text-left p-4">Giorno</th>
-              <th className="text-left p-4">Orario</th>
+              <th className="text-left p-4">Giorni e orari</th>
               <th className="text-left p-4">Iscritti</th>
               <th className="text-left p-4">Stato</th>
               <th className="text-left p-4">Azioni</th>
@@ -174,8 +243,15 @@ export function CorsiPage() {
                 <tr key={c.id} className="border-t border-slate-100">
                   <td className="p-4 font-medium">{c.name}</td>
                   <td className="p-4">{c.teacherName}</td>
-                  <td className="p-4">{GIORNI[c.dayOfWeek]}</td>
-                  <td className="p-4">{c.startTime} - {c.endTime}</td>
+                  <td className="p-4">
+                    {(c.schedules?.length ? c.schedules : [{ dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime }]).map(
+                      (s, i) => (
+                        <span key={i} className="block text-sm">
+                          {GIORNI[s.dayOfWeek]} {s.startTime}-{s.endTime}
+                        </span>
+                      )
+                    )}
+                  </td>
                   <td className="p-4">{count} / {c.maxStudents}</td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded text-xs ${c.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>

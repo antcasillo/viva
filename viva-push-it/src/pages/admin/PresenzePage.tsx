@@ -10,9 +10,17 @@ export function PresenzePage() {
   const [selectedCourse, setSelectedCourse] = useState<string>('');
 
   const dayOfWeek = new Date(selectedDate).getDay();
+  const courseHasDay = (c: typeof courses[0]) => {
+    const scheds = c.schedules?.length ? c.schedules : [{ dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime }];
+    return scheds.some((s) => s.dayOfWeek === dayOfWeek);
+  };
+  const getScheduleForDay = (c: typeof courses[0]) => {
+    const scheds = c.schedules?.length ? c.schedules : [{ dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime }];
+    return scheds.find((s) => s.dayOfWeek === dayOfWeek);
+  };
   const relevantCourses = selectedCourse
-    ? courses.filter((c) => c.id === selectedCourse)
-    : courses.filter((c) => c.dayOfWeek === dayOfWeek);
+    ? courses.filter((c) => c.id === selectedCourse && courseHasDay(c))
+    : courses.filter(courseHasDay);
 
   const getEnrolledStudents = (courseId: string) => {
     const ids = enrollments.filter((e) => e.courseId === courseId && e.isActive).map((e) => e.studentId);
@@ -62,7 +70,10 @@ export function PresenzePage() {
               <div className="p-4 bg-slate-50 border-b">
                 <h2 className="font-semibold text-slate-800">{course.name}</h2>
                 <p className="text-sm text-slate-500">
-                  {DAY_NAMES[course.dayOfWeek]} {course.startTime} - {course.endTime} • {formatDate(selectedDate)}
+                  {(() => {
+                    const s = getScheduleForDay(course);
+                    return s ? `${DAY_NAMES[s.dayOfWeek]} ${s.startTime} - ${s.endTime}` : '';
+                  })()} • {formatDate(selectedDate)}
                 </p>
               </div>
               <table className="w-full">
@@ -88,7 +99,7 @@ export function PresenzePage() {
                             type="checkbox"
                             checked={status === 'present'}
                             onChange={(e) =>
-                              setAttendance(course.id, student.id, selectedDate, e.target.checked ? 'present' : 'unknown')
+                              setAttendance(course.id, student.id, selectedDate, e.target.checked ? 'present' : 'unknown', undefined, getScheduleForDay(course)?.startTime)
                             }
                             disabled={isPreavvisato}
                             className="rounded"
@@ -99,7 +110,7 @@ export function PresenzePage() {
                             type="checkbox"
                             checked={status === 'absent'}
                             onChange={(e) =>
-                              setAttendance(course.id, student.id, selectedDate, e.target.checked ? 'absent' : 'unknown')
+                              setAttendance(course.id, student.id, selectedDate, e.target.checked ? 'absent' : 'unknown', undefined, getScheduleForDay(course)?.startTime)
                             }
                             disabled={isPreavvisato}
                             className="rounded"

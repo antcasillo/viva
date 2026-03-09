@@ -83,6 +83,12 @@ if (courseCount > 0) {
      (?, 'Chitarra Avanzata', 'Per allievi con almeno 2 anni di esperienza', 'Maestro Carlo Bianchi', 3, '17:30', '18:30', 6, 'Aula 2'),
      (?, 'Canto Corale', 'Laboratorio di canto per bambini e ragazzi', 'Prof.ssa Francesca Neri', 5, '15:00', '16:30', 12, 'Sala Concerti')`
   ).run(c1, c2, c3);
+  const insertSched = db.prepare(
+    'INSERT INTO course_schedules (id, course_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?, ?)'
+  );
+  insertSched.run(uuid(), c1, 1, '16:00', '17:00');
+  insertSched.run(uuid(), c2, 3, '17:30', '18:30');
+  insertSched.run(uuid(), c3, 5, '15:00', '16:30');
   console.log('  ✓ Corsi creati: 3');
 }
 

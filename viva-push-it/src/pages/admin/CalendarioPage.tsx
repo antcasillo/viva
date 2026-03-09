@@ -9,19 +9,27 @@ import { parseDateToISO } from '../../utils/dateFormat';
 import type { EventClickArg } from '@fullcalendar/core';
 import type { Event } from '../../types/database';
 
-function getNextOccurrences(course: { id: string; dayOfWeek: number; startTime: string; endTime: string; name: string }, count: number) {
+function getNextOccurrences(
+  course: { id: string; name: string; schedules?: { dayOfWeek: number; startTime: string; endTime: string }[]; dayOfWeek?: number; startTime?: string; endTime?: string },
+  count: number
+) {
   const events: { title: string; start: string; end: string; extendedProps: { courseId: string } }[] = [];
+  const schedules = course.schedules?.length
+    ? course.schedules
+    : [{ dayOfWeek: course.dayOfWeek ?? 0, startTime: course.startTime ?? '09:00', endTime: course.endTime ?? '10:00' }];
   const today = new Date();
   let found = 0;
   for (let i = 0; i < 60 && found < count; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() + i);
-    if (d.getDay() === course.dayOfWeek) {
+    const dayOfWeek = d.getDay();
+    const sched = schedules.find((s) => s.dayOfWeek === dayOfWeek);
+    if (sched) {
       const dateStr = d.toISOString().split('T')[0];
       events.push({
         title: course.name,
-        start: `${dateStr}T${course.startTime}:00`,
-        end: `${dateStr}T${course.endTime}:00`,
+        start: `${dateStr}T${sched.startTime}:00`,
+        end: `${dateStr}T${sched.endTime}:00`,
         extendedProps: { courseId: course.id },
       });
       found++;
