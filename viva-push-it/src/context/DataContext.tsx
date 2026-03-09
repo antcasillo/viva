@@ -2,14 +2,6 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import type { Student, Course, CourseEnrollment, Attendance, Payment, Event } from '../types/database';
 import { isBackendConfigured } from '../lib/apiClient';
 import { useAuth } from './AuthContext';
-import {
-  mockStudents,
-  mockCourses,
-  mockEnrollments,
-  mockAttendances,
-  mockPayments,
-  mockEvents,
-} from '../data/mockData';
 import * as apiBackend from '../services/apiBackend';
 
 type DataContextType = {
@@ -50,12 +42,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const useDb = isBackendConfigured();
   const { user } = useAuth();
 
-  const [students, setStudents] = useState<Student[]>(useDb ? [] : mockStudents);
-  const [courses, setCourses] = useState<Course[]>(useDb ? [] : mockCourses);
-  const [enrollments, setEnrollments] = useState<CourseEnrollment[]>(useDb ? [] : mockEnrollments);
-  const [attendances, setAttendances] = useState<Attendance[]>(useDb ? [] : mockAttendances);
-  const [payments, setPayments] = useState<Payment[]>(useDb ? [] : mockPayments);
-  const [events, setEvents] = useState<Event[]>(useDb ? [] : mockEvents);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [enrollments, setEnrollments] = useState<CourseEnrollment[]>([]);
+  const [attendances, setAttendances] = useState<Attendance[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(useDb);
   const [error, setError] = useState<string | null>(null);
 

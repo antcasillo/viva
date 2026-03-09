@@ -5,6 +5,11 @@
 
 const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://localhost:3001' : '');
 
+/** In produzione (stesso server) usiamo sempre il backend; in dev serve VITE_API_URL o default localhost */
+export function isBackendConfigured(): boolean {
+  return !!API_URL || import.meta.env.PROD;
+}
+
 function getToken(): string | null {
   return localStorage.getItem('viva_token') || sessionStorage.getItem('viva_token');
 }
@@ -49,10 +54,6 @@ export const apiClient = {
   put: <T>(path: string, body: unknown) => fetchApi<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
   delete: <T>(path: string) => fetchApi<T>(path, { method: 'DELETE' }),
 };
-
-export function isBackendConfigured(): boolean {
-  return !!API_URL;
-}
 
 /** URL completa per avatar (in dev serve il prefisso API) */
 export function getAvatarUrl(avatarUrl: string | undefined): string | undefined {

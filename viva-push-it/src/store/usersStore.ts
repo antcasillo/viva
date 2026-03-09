@@ -1,17 +1,9 @@
 import type { User } from '../types/database';
-import { mockUsers } from '../data/mockData';
 
 const DEFAULT_PASSWORD = 'user123';
-const INITIAL_CREDENTIALS: Record<string, string> = {
-  'admin@vivapush.it': 'admin123',
-  'genitore.bianchi@gmail.com': 'user123',
-  'anna.verdi@email.it': 'user123',
-  'marco.neri@outlook.com': 'user123',
-  'laura.gialli@gmail.com': 'user123',
-  'paolo.rossi@email.it': 'user123',
-};
+const INITIAL_CREDENTIALS: Record<string, string> = {};
 
-let users: User[] = [...mockUsers];
+let users: User[] = [];
 let credentials: Record<string, string> = { ...INITIAL_CREDENTIALS };
 
 export function getUsers(): User[] {

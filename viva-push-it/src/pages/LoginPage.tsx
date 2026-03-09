@@ -114,12 +114,6 @@ export function LoginPage() {
               {isLoading ? 'Accesso in corso...' : 'Accedi'}
             </button>
           </form>
-
-          <p className="mt-6 text-center text-sm text-slate-500">
-            {import.meta.env.VITE_API_URL || import.meta.env.DEV
-              ? 'Admin: admin / admin123'
-              : 'Demo mock: admin / admin123 — genitore.bianchi@gmail.com / user123'}
-          </p>
         </div>
       </div>
     </div>

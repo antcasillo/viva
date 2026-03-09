@@ -63,6 +63,19 @@ Oppure: `/root/viva.sh` (se hai installato il wrapper)
 ### L'app mostra "Errore caricamento dati"
 → Verifica `VITE_API_URL` in `.env.production`, Nginx su porta 3001, `pm2 list`.
 
+### Vedo sempre i dati mock (Maria Rossi, Luca Bianchi, ecc.)
+→ **VITE_API_URL non è nel build.** Controlla che `.env.production` esista in `viva-push-it/` con:
+   ```
+   VITE_API_URL=https://viva.push.it
+   ```
+   (sostituisci con il tuo dominio se diverso). Poi **ricompila**:
+   ```bash
+   cd /var/www/viva.push.it/viva-push-it
+   npm run build
+   pm2 restart viva-push-it
+   ```
+   Le variabili Vite vengono incluse solo al momento del build. Se manca `.env.production` o è sbagliato, il frontend userà sempre i mock.
+
 ### Database vuoto
 → `cd viva-push-it && npm run db:seed`
 
