@@ -73,6 +73,31 @@ router.get('/me', authMiddleware, (req, res) => {
   res.json({ user: req.user });
 });
 
+// PATCH /api/auth/profile - aggiorna nome e telefono del proprio profilo
+router.patch('/profile', authMiddleware, (req, res) => {
+  const { fullName, phone } = req.body;
+  if (!fullName || typeof fullName !== 'string' || !fullName.trim()) {
+    return res.status(400).json({ error: 'Nome richiesto' });
+  }
+  db.prepare(
+    'UPDATE profiles SET full_name = ?, phone = ? WHERE id = ?'
+  ).run(fullName.trim(), phone != null ? String(phone).trim() || null : null, req.user.id);
+  const updated = db.prepare(
+    'SELECT id, email, full_name, phone, role, avatar_url, created_at FROM profiles WHERE id = ?'
+  ).get(req.user.id);
+  res.json({
+    user: {
+      id: updated.id,
+      email: updated.email,
+      fullName: updated.full_name,
+      phone: updated.phone,
+      role: updated.role,
+      avatarUrl: updated.avatar_url,
+      createdAt: updated.created_at,
+    },
+  });
+});
+
 // POST /api/auth/change-password - cambia la propria password (richiede auth)
 router.post('/change-password', authMiddleware, (req, res) => {
   const { currentPassword, newPassword } = req.body;

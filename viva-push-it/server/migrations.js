@@ -16,7 +16,7 @@ function initDb(db) {
       password_hash TEXT NOT NULL,
       full_name TEXT NOT NULL,
       phone TEXT,
-      role TEXT NOT NULL CHECK (role IN ('admin', 'user')),
+      role TEXT NOT NULL CHECK (role IN ('admin', 'user', 'maestro')),
       avatar_url TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
@@ -165,6 +165,43 @@ function initDb(db) {
       db.prepare("UPDATE profiles SET username = 'admin' WHERE role = 'admin' AND (username IS NULL OR username = '')").run();
     }
   } catch (_) {}
+
+  // Migrazione: aggiungi ruolo 'maestro' (ricrea tabella profiles se necessario)
+  try {
+    const done = db.prepare("SELECT 1 FROM migrations WHERE id = 'maestro_role'").get();
+    if (done) return;
+  } catch (_) {}
+  try {
+    const tableInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='profiles'").get();
+    if (tableInfo?.sql && !tableInfo.sql.includes("'maestro'")) {
+      const cols = db.prepare("PRAGMA table_info(profiles)").all();
+      const hasUsername = cols.some((c) => c.name === 'username');
+      db.exec("PRAGMA foreign_keys = OFF");
+      const createSql = `CREATE TABLE profiles_new (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        phone TEXT,
+        role TEXT NOT NULL CHECK (role IN ('admin', 'user', 'maestro')),
+        avatar_url TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))${hasUsername ? ', username TEXT' : ''}
+      )`;
+      db.exec(createSql);
+      const colList = cols.map((c) => c.name).join(', ');
+      db.exec(`INSERT INTO profiles_new (${colList}) SELECT ${colList} FROM profiles`);
+      db.exec("DROP TABLE profiles");
+      db.exec("ALTER TABLE profiles_new RENAME TO profiles");
+      db.exec("PRAGMA foreign_keys = ON");
+      db.prepare("INSERT INTO migrations (id, executed_at) VALUES ('maestro_role', datetime('now'))").run();
+    } else {
+      db.prepare("INSERT INTO migrations (id, executed_at) VALUES ('maestro_role', datetime('now'))").run();
+    }
+  } catch (e) {
+    db.exec("PRAGMA foreign_keys = ON");
+    try { db.prepare("INSERT INTO migrations (id, executed_at) VALUES ('maestro_role', datetime('now'))").run(); } catch (_) {}
+  }
 }
 
 module.exports = { initDb };

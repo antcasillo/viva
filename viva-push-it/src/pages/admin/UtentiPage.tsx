@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getUsers, addUser, updateUser, deleteUser, setUserPassword } from '../../store/usersStore';
 import { isBackendConfigured } from '../../lib/apiClient';
-import { fetchAllProfilesBackend, updateProfileBackend, resetUserPasswordBackend } from '../../services/apiBackend';
+import { fetchAllProfilesBackend, updateProfileBackend, resetUserPasswordBackend, createProfileBackend } from '../../services/apiBackend';
 import type { User, UserRole } from '../../types/database';
 
 export function UtentiPage() {
@@ -44,8 +44,25 @@ export function UtentiPage() {
       refresh();
     } else if (creating && form.email && form.fullName && form.role) {
       if (useDb) {
-        // Con il backend i nuovi utenti si creano tramite la pagina Registrati o lo script di seed
-        alert('Con il backend, usa "Registrati" nella pagina di login oppure lo script: npm run db:seed');
+        const pwd = form.password?.trim();
+        if (!pwd || pwd.length < 6) {
+          alert('La password deve essere di almeno 6 caratteri');
+          return;
+        }
+        try {
+          await createProfileBackend({
+            email: form.email,
+            password: pwd,
+            fullName: form.fullName,
+            phone: form.phone,
+            role: form.role,
+          });
+          setCreating(false);
+          setForm({});
+          refresh();
+        } catch (err) {
+          alert(err instanceof Error ? err.message : 'Errore creazione utente');
+        }
         return;
       }
       addUser(
@@ -125,6 +142,7 @@ export function UtentiPage() {
                 className="w-full px-3 py-2 border rounded-lg"
               >
                 <option value="admin">Admin</option>
+                <option value="maestro">Maestro</option>
                 <option value="user">Utente (Genitore)</option>
               </select>
             </div>
@@ -132,9 +150,7 @@ export function UtentiPage() {
               <label className="block text-sm text-slate-600 mb-1">
                 {editing
                   ? 'Nuova password (lascia vuoto per non cambiare)'
-                  : useDb
-                    ? 'Crea utenti con npm run db:seed o registrazione'
-                    : 'Password *'}
+                  : 'Password *'}
               </label>
               {editing && (
                 <input
@@ -145,17 +161,16 @@ export function UtentiPage() {
                   className="w-full px-3 py-2 border rounded-lg"
                 />
               )}
-              {creating && !useDb && (
+              {creating && (
                 <input
                   type="password"
                   value={form.password ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                  placeholder="user123"
+                  placeholder={useDb ? 'Min. 6 caratteri' : 'user123'}
+                  required={!!useDb}
+                  minLength={useDb ? 6 : undefined}
                   className="w-full px-3 py-2 border rounded-lg"
                 />
-              )}
-              {creating && useDb && (
-                <p className="text-sm text-slate-500 py-2">Usa Registrati nella pagina di login o npm run db:seed</p>
               )}
             </div>
           </div>
@@ -188,8 +203,11 @@ export function UtentiPage() {
                 <td className="p-4 font-medium">{u.fullName}</td>
                 <td className="p-4 text-sm">{u.phone ?? '-'}</td>
                 <td className="p-4">
-                  <span className={`px-2 py-1 rounded text-xs ${u.role === 'admin' ? 'bg-primary-100 text-primary-700' : 'bg-slate-100'}`}>
-                    {u.role}
+                  <span className={`px-2 py-1 rounded text-xs ${
+                    u.role === 'admin' ? 'bg-primary-100 text-primary-700' :
+                    u.role === 'maestro' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100'
+                  }`}>
+                    {u.role === 'maestro' ? 'Maestro' : u.role}
                   </span>
                 </td>
                 <td className="p-4 flex gap-2">
@@ -199,7 +217,7 @@ export function UtentiPage() {
                   >
                     Modifica
                   </button>
-                  {u.role !== 'admin' && (
+                  {u.role !== 'admin' && u.role !== 'maestro' && (
                     <button
                       onClick={() => handleDelete(u.id)}
                       className="text-red-600 hover:underline text-sm"

@@ -1,12 +1,18 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { isBackendConfigured } from '../../lib/apiClient';
-import { changePasswordBackend, uploadAvatarBackend, removeAvatarBackend } from '../../services/apiBackend';
+import { changePasswordBackend, uploadAvatarBackend, removeAvatarBackend, updateOwnProfileBackend } from '../../services/apiBackend';
 import { Avatar } from '../../components/Avatar';
 
 export function AdminProfilePage() {
   const { user, refreshUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [profileForm, setProfileForm] = useState({ fullName: '', phone: '' });
+  useEffect(() => {
+    if (user) setProfileForm({ fullName: user.fullName, phone: user.phone ?? '' });
+  }, [user?.id, user?.fullName, user?.phone]);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState('');
   const [pwForm, setPwForm] = useState({ current: '', new: '', confirm: '' });
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState(false);
@@ -41,6 +47,22 @@ export function AdminProfilePage() {
       setAvatarError(err instanceof Error ? err.message : 'Errore');
     } finally {
       setAvatarLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profileForm.fullName.trim() || !useDb) return;
+    setProfileError('');
+    setProfileSaving(true);
+    try {
+      const updated = await updateOwnProfileBackend(profileForm.fullName.trim(), profileForm.phone || undefined);
+      refreshUser();
+      setProfileForm({ fullName: updated.fullName, phone: updated.phone ?? '' });
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : 'Errore aggiornamento');
+    } finally {
+      setProfileSaving(false);
     }
   };
 
@@ -108,10 +130,39 @@ export function AdminProfilePage() {
               </div>
             )}
           </div>
-          <div>
-            <h2 className="text-lg font-semibold text-slate-800">{user?.fullName}</h2>
-            <p className="text-slate-600">{user?.email}</p>
-            <span className="inline-block mt-1 px-2 py-0.5 bg-primary-100 text-primary-700 text-xs rounded">Admin</span>
+          <div className="flex-1">
+            <form onSubmit={handleUpdateProfile} className="space-y-3">
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Nome</label>
+                <input
+                  type="text"
+                  value={profileForm.fullName}
+                  onChange={(e) => setProfileForm((f) => ({ ...f, fullName: e.target.value }))}
+                  placeholder="Nome completo"
+                  required
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Telefono</label>
+                <input
+                  type="text"
+                  value={profileForm.phone}
+                  onChange={(e) => setProfileForm((f) => ({ ...f, phone: e.target.value }))}
+                  placeholder="+39 333 1234567"
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <p className="text-slate-600 text-sm">{user?.email}</p>
+              <span className="inline-block px-2 py-0.5 bg-primary-100 text-primary-700 text-xs rounded">Admin</span>
+              {profileError && <p className="text-sm text-red-600">{profileError}</p>}
+              {useDb && (
+                <button type="submit" disabled={profileSaving} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                >
+                  {profileSaving ? 'Salvataggio...' : 'Salva modifiche'}
+                </button>
+              )}
+            </form>
             {avatarError && <p className="mt-1 text-sm text-red-600">{avatarError}</p>}
           </div>
         </div>

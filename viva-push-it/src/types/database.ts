@@ -3,7 +3,7 @@
  * Scuola di Musica - Gestione Allievi, Corsi, Presenze, Pagamenti, Eventi
  */
 
-export type UserRole = 'admin' | 'user';
+export type UserRole = 'admin' | 'user' | 'maestro';
 
 export interface User {
   id: string;

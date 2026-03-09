@@ -54,7 +54,7 @@ function App() {
           <Route
             path="/area-utente"
             element={
-              <ProtectedRoute allowedRoles={['user']}>
+              <ProtectedRoute allowedRoles={['user', 'maestro']}>
                 <UserLayout />
               </ProtectedRoute>
             }

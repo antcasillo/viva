@@ -63,6 +63,14 @@ export async function fetchProfileBackend(): Promise<User | null> {
   }
 }
 
+export async function updateOwnProfileBackend(fullName: string, phone?: string): Promise<User> {
+  const data = await api<{ user: User }>('/api/auth/profile', {
+    method: 'PATCH',
+    body: { fullName, phone },
+  });
+  return data.user;
+}
+
 export async function changePasswordBackend(currentPassword: string, newPassword: string): Promise<void> {
   await api('/api/auth/change-password', {
     method: 'POST',
