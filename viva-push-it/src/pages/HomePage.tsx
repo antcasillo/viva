@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Avatar } from '../components/Avatar';
 
 export function HomePage() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -13,9 +14,7 @@ export function HomePage() {
             {isAuthenticated ? (
               <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm">
-                    {user?.fullName?.split(' ').map((n) => n[0]).join('').slice(0, 2) ?? '?'}
-                  </div>
+                  <Avatar avatarUrl={user?.avatarUrl} fullName={user?.fullName} size="xs" />
                   <span className="text-slate-700 font-medium hidden sm:inline">{user?.fullName}</span>
                 </div>
                 <Link

@@ -53,3 +53,11 @@ export const apiClient = {
 export function isBackendConfigured(): boolean {
   return !!API_URL;
 }
+
+/** URL completa per avatar (in dev serve il prefisso API) */
+export function getAvatarUrl(avatarUrl: string | undefined): string | undefined {
+  if (!avatarUrl) return undefined;
+  if (avatarUrl.startsWith('http')) return avatarUrl;
+  const base = API_URL || '';
+  return base ? `${base.replace(/\/$/, '')}${avatarUrl}` : avatarUrl;
+}

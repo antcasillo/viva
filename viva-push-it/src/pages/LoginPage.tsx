@@ -44,16 +44,17 @@ export function LoginPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-                Email
+                Email o username
               </label>
               <input
                 id="email"
-                type="email"
+                type="text"
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="nome@email.com"
+                placeholder="admin oppure nome@email.com"
               />
             </div>
 
@@ -93,8 +94,8 @@ export function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-slate-500">
             {import.meta.env.VITE_API_URL || import.meta.env.DEV
-              ? 'Dopo il seed: admin@vivapush.it / admin123'
-              : 'Demo mock: admin@vivapush.it / admin123 — genitore.bianchi@gmail.com / user123'}
+              ? 'Admin: admin / admin123'
+              : 'Demo mock: admin / admin123 — genitore.bianchi@gmail.com / user123'}
           </p>
         </div>
       </div>

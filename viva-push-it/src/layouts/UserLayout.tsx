@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { Avatar } from '../components/Avatar';
 
 const navItems = [
   { path: '/area-utente', label: 'Profilo', icon: '👤' },
@@ -29,7 +30,8 @@ export function UserLayout() {
             <Link to="/area-utente" className="font-bold text-xl text-primary-700">
               viva.push.it
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Avatar avatarUrl={user?.avatarUrl} fullName={user?.fullName} size="xs" />
               <span className="text-slate-600 text-sm">{user?.fullName}</span>
               <button
                 onClick={handleLogout}

@@ -13,6 +13,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string, rememberMe: boolean) => Promise<{ success: boolean; user?: User; error?: string }>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -111,8 +112,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearStoredUser();
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    if (isBackendConfigured()) {
+      const profile = await fetchProfileBackend();
+      if (profile) setUser(profile);
+    }
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, refreshUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

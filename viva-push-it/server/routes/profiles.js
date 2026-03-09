@@ -17,6 +17,21 @@ router.get('/', (req, res) => {
   res.json(rows.map((r) => ({ id: r.id, email: r.email, fullName: r.full_name, phone: r.phone, role: r.role, avatarUrl: r.avatar_url, createdAt: r.created_at })));
 });
 
+// PATCH /api/profiles/:id/password - admin reimposta password (deve essere prima di /:id)
+router.patch('/:id/password', (req, res) => {
+  const { id } = req.params;
+  const { newPassword } = req.body;
+  if (!newPassword) return res.status(400).json({ error: 'Nuova password richiesta' });
+  if (newPassword.length < 6) return res.status(400).json({ error: 'La password deve essere di almeno 6 caratteri' });
+
+  const target = db.prepare('SELECT id FROM profiles WHERE id = ?').get(id);
+  if (!target) return res.status(404).json({ error: 'Utente non trovato' });
+
+  const hash = bcrypt.hashSync(newPassword, 10);
+  db.prepare('UPDATE profiles SET password_hash = ?, updated_at = datetime("now") WHERE id = ?').run(hash, id);
+  res.json({ ok: true });
+});
+
 // PATCH /api/profiles/:id - aggiorna profilo
 router.patch('/:id', (req, res) => {
   const { id } = req.params;

@@ -119,6 +119,7 @@ function initDb(db) {
   // --- Migrazioni: aggiungi colonne se non esistono ---
   const alterColumns = [
     { table: 'profiles', column: 'phone', def: 'TEXT' },
+    { table: 'profiles', column: 'username', def: 'TEXT' },
     // Aggiungere qui nuove colonne per future migrazioni
   ];
 
@@ -142,12 +143,28 @@ function initDb(db) {
       const crypto = require('crypto');
       const id = crypto.randomUUID();
       const hash = bcrypt.hashSync(bootstrapPassword, 10);
-      db.prepare(
-        `INSERT INTO profiles (id, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)`
-      ).run(id, 'admin@vivapush.it', hash, 'Amministratore', 'admin');
-      console.log('  ✓ Admin bootstrap creato (admin@vivapush.it)');
+      const cols = db.prepare("PRAGMA table_info(profiles)").all();
+      const hasUsername = cols.some((c) => c.name === 'username');
+      if (hasUsername) {
+        db.prepare(
+          `INSERT INTO profiles (id, username, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?, ?)`
+        ).run(id, 'admin', 'admin@vivapush.it', hash, 'Amministratore', 'admin');
+      } else {
+        db.prepare(
+          `INSERT INTO profiles (id, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)`
+        ).run(id, 'admin@vivapush.it', hash, 'Amministratore', 'admin');
+      }
+      console.log('  ✓ Admin bootstrap creato (username: admin)');
     }
   }
+
+  // Migrazione: imposta username='admin' per admin esistente senza username
+  try {
+    const cols = db.prepare("PRAGMA table_info(profiles)").all();
+    if (cols.some((c) => c.name === 'username')) {
+      db.prepare("UPDATE profiles SET username = 'admin' WHERE role = 'admin' AND (username IS NULL OR username = '')").run();
+    }
+  } catch (_) {}
 }
 
 module.exports = { initDb };

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getUsers, addUser, updateUser, deleteUser, setUserPassword } from '../../store/usersStore';
 import { isBackendConfigured } from '../../lib/apiClient';
-import { fetchAllProfilesBackend, updateProfileBackend } from '../../services/apiBackend';
+import { fetchAllProfilesBackend, updateProfileBackend, resetUserPasswordBackend } from '../../services/apiBackend';
 import type { User, UserRole } from '../../types/database';
 
 export function UtentiPage() {
@@ -33,6 +33,9 @@ export function UtentiPage() {
           phone: form.phone ?? editing.phone,
           role: form.role ?? editing.role,
         });
+        if (form.password) {
+          await resetUserPasswordBackend(editing.id, form.password);
+        }
       } else {
         updateUser(editing.id, form);
         if (form.password) setUserPassword(editing.id, form.password);
@@ -125,20 +128,36 @@ export function UtentiPage() {
                 <option value="user">Utente (Genitore)</option>
               </select>
             </div>
-            {!useDb && (
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">
-                  {editing ? 'Nuova password (lascia vuoto per non cambiare)' : 'Password *'}
-                </label>
+            <div>
+              <label className="block text-sm text-slate-600 mb-1">
+                {editing
+                  ? 'Nuova password (lascia vuoto per non cambiare)'
+                  : useDb
+                    ? 'Crea utenti con npm run db:seed o registrazione'
+                    : 'Password *'}
+              </label>
+              {editing && (
                 <input
                   type="password"
                   value={form.password ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                  placeholder={editing ? 'Lascia vuoto per non cambiare' : 'user123'}
+                  placeholder="Lascia vuoto per non cambiare"
                   className="w-full px-3 py-2 border rounded-lg"
                 />
-              </div>
-            )}
+              )}
+              {creating && !useDb && (
+                <input
+                  type="password"
+                  value={form.password ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  placeholder="user123"
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              )}
+              {creating && useDb && (
+                <p className="text-sm text-slate-500 py-2">Usa Registrati nella pagina di login o npm run db:seed</p>
+              )}
+            </div>
           </div>
           <div className="flex gap-2 mt-4">
             <button onClick={handleSave} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">

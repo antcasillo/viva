@@ -26,6 +26,9 @@ app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', cred
 app.use(express.json());
 app.use(cookieParser());
 
+// Upload avatar (prima del catch-all in produzione)
+app.use('/uploads', express.static(path.join(__dirname, '..', 'data', 'uploads')));
+
 // API
 app.use('/api/auth', authRoutes);
 app.use('/api/profiles', profilesRoutes);
@@ -39,7 +42,7 @@ app.use('/api/events', eventsRoutes);
 // Health check
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-// In produzione: serve il frontend buildato
+// In produzione: serve il frontend buildato (uploads già serviti sopra)
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '..', 'dist');
   app.use(express.static(distPath));

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { Avatar } from '../components/Avatar';
 
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: '📊' },
@@ -12,6 +13,7 @@ const navItems = [
   { path: '/admin/calendario', label: 'Calendario Corsi', icon: '📅' },
   { path: '/admin/bacheca', label: 'Bacheca Eventi', icon: '📌' },
   { path: '/admin/utenti', label: 'Gestione Utenti', icon: '👤' },
+  { path: '/admin/profilo', label: 'Profilo', icon: '⚙️' },
 ];
 
 export function AdminLayout() {
@@ -66,9 +68,7 @@ export function AdminLayout() {
 
         <div className="p-4 border-t border-slate-700">
           <div className={`flex items-center gap-3 ${sidebarOpen ? '' : 'justify-center'}`}>
-            <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-sm font-bold">
-              {user?.fullName?.charAt(0) ?? 'A'}
-            </div>
+            <Avatar avatarUrl={user?.avatarUrl} fullName={user?.fullName} size="xs" variant="dark" className="flex-shrink-0" />
             {sidebarOpen && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{user?.fullName}</p>

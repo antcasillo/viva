@@ -14,6 +14,7 @@ import { ContabilePage } from './pages/admin/ContabilePage';
 import { CalendarioPage } from './pages/admin/CalendarioPage';
 import { BachecaPage } from './pages/admin/BachecaPage';
 import { UtentiPage } from './pages/admin/UtentiPage';
+import { AdminProfilePage } from './pages/admin/AdminProfilePage';
 import { UserProfilePage } from './pages/user/UserProfilePage';
 import { ProssimeLezioniPage } from './pages/user/ProssimeLezioniPage';
 import { PagamentiPage } from './pages/user/PagamentiPage';
@@ -46,6 +47,7 @@ function App() {
             <Route path="calendario" element={<CalendarioPage />} />
             <Route path="bacheca" element={<BachecaPage />} />
             <Route path="utenti" element={<UtentiPage />} />
+            <Route path="profilo" element={<AdminProfilePage />} />
           </Route>
 
           {/* Area Utente/Genitori (protetta) */}

@@ -42,9 +42,9 @@ viva-push-it/
 
 ## Credenziali Demo (Mock)
 
-| Email | Password | Ruolo |
-|-------|----------|-------|
-| admin@vivapush.it | admin123 | Admin |
+| Username / Email | Password | Ruolo |
+|------------------|----------|-------|
+| admin | admin123 | Admin |
 | genitore.bianchi@gmail.com | user123 | User |
 | anna.verdi@email.it | user123 | User |
 
@@ -87,4 +87,4 @@ Schema unificato in `server/migrations.js` (stile gestionale-push: init_db + ALT
 2. `npm run db:seed`
 3. `npm run server` (terminale 1)
 4. `npm run dev` (terminale 2)
-5. Apri http://localhost:5173 e accedi con admin@vivapush.it / admin123
+5. Apri http://localhost:5173 e accedi con admin / admin123

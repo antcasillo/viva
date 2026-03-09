@@ -131,7 +131,7 @@ npm run dev
 
 1. Clicca su **Accedi** (o vai a http://localhost:5173/login)
 2. Inserisci:
-   - **Email:** `admin@vivapush.it`
+   - **Username:** `admin` (oppure email)
    - **Password:** `admin123`
 3. Spunta "Resta connesso per 30 giorni" se vuoi
 4. Clicca **Accedi**
@@ -141,7 +141,7 @@ npm run dev
 **Se vedi "Email o password non corretti":**
 - Controlla di aver eseguito `npm run db:seed` (Passo 3)
 - Controlla che il server backend sia in esecuzione (Passo 4)
-- Verifica di non aver modificato email o password
+- Prova con `admin` / `admin123`
 
 ---
 
@@ -168,11 +168,13 @@ Per un backup manuale: `npm run db:backup`
 
 ## Credenziali demo
 
-| Ruolo  | Email                        | Password |
+| Ruolo  | Username / Email             | Password |
 |--------|------------------------------|----------|
-| Admin  | admin@vivapush.it            | admin123 |
+| Admin  | admin                        | admin123 |
 | Genitore | genitore.bianchi@gmail.com | user123  |
 | Genitore | anna.verdi@email.it        | user123  |
+
+**Cambio password:** Admin (menu Profilo) e utenti (Profilo personale) possono cambiare la propria password dopo il primo accesso. L'admin può reimpostare la password di altri utenti da Gestione Utenti → Modifica.
 
 ---
 

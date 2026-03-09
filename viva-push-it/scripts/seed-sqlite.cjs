@@ -26,7 +26,7 @@ function uuid() {
 }
 
 const USERS = [
-  { email: 'admin@vivapush.it', password: 'admin123', full_name: 'Maria Rossi', role: 'admin', phone: null },
+  { username: 'admin', email: 'admin@vivapush.it', password: 'admin123', full_name: 'Maria Rossi', role: 'admin', phone: null },
   { email: 'genitore.bianchi@gmail.com', password: 'user123', full_name: 'Giuseppe Bianchi', role: 'user', phone: '+39 333 1234567' },
   { email: 'anna.verdi@email.it', password: 'user123', full_name: 'Anna Verdi', role: 'user', phone: '+39 340 9876543' },
   { email: 'marco.neri@outlook.com', password: 'user123', full_name: 'Marco Neri', role: 'user', phone: '+39 328 5551234' },
@@ -39,23 +39,33 @@ const userIds = {};
 console.log('🌱 Seed SQLite viva.push.it...\n');
 
 for (const u of USERS) {
-  const existing = db.prepare('SELECT id FROM profiles WHERE email = ?').get(u.email);
+  const key = u.username || u.email;
+  const existing = db.prepare('SELECT id FROM profiles WHERE email = ? OR username = ?').get(u.email, u.username || '');
   if (existing) {
-    userIds[u.email] = existing.id;
+    userIds[key] = existing.id;
     if (u.phone) {
       try { db.prepare('UPDATE profiles SET phone = ? WHERE id = ?').run(u.phone, existing.id); } catch (_) {}
     }
-    console.log('  ✓ Utente esistente:', u.email);
+    if (u.username) {
+      try { db.prepare('UPDATE profiles SET username = ? WHERE id = ?').run(u.username, existing.id); } catch (_) {}
+    }
+    console.log('  ✓ Utente esistente:', key);
   } else {
     const id = uuid();
     const hash = bcrypt.hashSync(u.password, 10);
-    db.prepare('INSERT INTO profiles (id, email, password_hash, full_name, phone, role) VALUES (?, ?, ?, ?, ?, ?)').run(id, u.email, hash, u.full_name, u.phone || null, u.role);
-    userIds[u.email] = id;
-    console.log('  ✓ Creato:', u.email);
+    const cols = db.prepare('PRAGMA table_info(profiles)').all();
+    const hasUsername = cols.some((c) => c.name === 'username');
+    if (hasUsername && u.username) {
+      db.prepare('INSERT INTO profiles (id, username, email, password_hash, full_name, phone, role) VALUES (?, ?, ?, ?, ?, ?, ?)').run(id, u.username, u.email, hash, u.full_name, u.phone || null, u.role);
+    } else {
+      db.prepare('INSERT INTO profiles (id, email, password_hash, full_name, phone, role) VALUES (?, ?, ?, ?, ?, ?)').run(id, u.email, hash, u.full_name, u.phone || null, u.role);
+    }
+    userIds[key] = id;
+    console.log('  ✓ Creato:', key);
   }
 }
 
-const adminId = userIds['admin@vivapush.it'];
+const adminId = userIds['admin'] || userIds['admin@vivapush.it'];
 const user1 = userIds['genitore.bianchi@gmail.com'];
 const user2 = userIds['anna.verdi@email.it'];
 const user3 = userIds['marco.neri@outlook.com'];
@@ -157,4 +167,4 @@ if (studentCount > 0) {
 
 db.close();
 console.log('\n✅ Seed completato!');
-console.log('\nCredenziali: admin@vivapush.it / admin123');
+console.log('\nCredenziali admin: admin / admin123');

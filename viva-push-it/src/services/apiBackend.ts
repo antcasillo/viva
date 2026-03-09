@@ -3,7 +3,7 @@
  * Usato quando VITE_API_URL è configurato
  */
 
-import { apiClient } from '../lib/apiClient';
+import { apiClient, getAvatarUrl } from '../lib/apiClient';
 import type {
   User,
   Student,
@@ -62,6 +62,40 @@ export async function fetchProfileBackend(): Promise<User | null> {
     return null;
   }
 }
+
+export async function changePasswordBackend(currentPassword: string, newPassword: string): Promise<void> {
+  await api('/api/auth/change-password', {
+    method: 'POST',
+    body: { currentPassword, newPassword },
+  });
+}
+
+export async function resetUserPasswordBackend(userId: string, newPassword: string): Promise<void> {
+  await api(`/api/profiles/${userId}/password`, {
+    method: 'PATCH',
+    body: { newPassword },
+  });
+}
+
+export async function uploadAvatarBackend(file: File): Promise<{ avatarUrl: string }> {
+  const token = apiClient.getToken();
+  const formData = new FormData();
+  formData.append('avatar', file);
+  const res = await fetch(`${API_URL}/api/auth/avatar`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Errore ${res.status}`);
+  return { avatarUrl: data.avatarUrl };
+}
+
+export async function removeAvatarBackend(): Promise<void> {
+  await api('/api/auth/avatar', { method: 'DELETE' });
+}
+
+export { getAvatarUrl };
 
 export async function fetchAllProfilesBackend(): Promise<User[]> {
   return api<User[]>('/api/profiles');
