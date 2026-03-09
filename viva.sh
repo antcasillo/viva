@@ -21,7 +21,7 @@ cd viva-push-it
 # Installa dipendenze solo se: node_modules manca, oppure package*.json sono cambiati nel pull
 if [ ! -d node_modules ] || git diff --name-only ORIG_HEAD HEAD 2>/dev/null | grep -qE 'viva-push-it/package(-lock)?\.json'; then
   echo "📦 Installo dipendenze..."
-  npm install
+  npm install --include=dev
 else
   echo "📦 Dipendenze invariate, salto npm install"
 fi
