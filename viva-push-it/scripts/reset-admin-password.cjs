@@ -31,7 +31,7 @@ try {
   }
 
   const hash = bcrypt.hashSync(newPassword, 10);
-  db.prepare('UPDATE profiles SET password_hash = ?, updated_at = datetime("now") WHERE id = ?').run(hash, admin.id);
+  db.prepare('UPDATE profiles SET password_hash = ? WHERE id = ?').run(hash, admin.id);
   db.close();
 
   console.log(`✓ Password admin aggiornata per ${admin.username || admin.email}`);
