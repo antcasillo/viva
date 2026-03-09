@@ -16,9 +16,15 @@ git pull
 # Aggiorna /root/viva.sh (wrapper)
 [ -f scripts/root-viva.sh ] && sudo cp scripts/root-viva.sh /root/viva.sh && sudo chmod +x /root/viva.sh
 
-echo "📦 Installo dipendenze..."
 cd viva-push-it
-npm install
+
+# Installa dipendenze solo se: node_modules manca, oppure package*.json sono cambiati nel pull
+if [ ! -d node_modules ] || git diff --name-only ORIG_HEAD HEAD 2>/dev/null | grep -qE 'viva-push-it/package(-lock)?\.json'; then
+  echo "📦 Installo dipendenze..."
+  npm install
+else
+  echo "📦 Dipendenze invariate, salto npm install"
+fi
 
 # Seed DB se non esiste (solo la prima volta)
 if [ ! -f data/viva.db ]; then

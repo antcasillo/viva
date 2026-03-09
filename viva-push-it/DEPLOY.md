@@ -171,7 +171,7 @@ Il server Node gira sulla porta 3001. Nginx deve fare proxy verso di essa.
 sudo nano /etc/nginx/sites-available/viva.push.it
 ```
 
-Contenuto (per viva.push.it):
+Contenuto (per viva.push.it). **Non copiare** la riga ` ```nginx ` — incolla solo il blocco `server { ... }`:
 
 ```nginx
 server {
